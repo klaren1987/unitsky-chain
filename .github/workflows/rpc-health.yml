@@ -1,0 +1,27 @@
+name: RPC Health Check
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 hours
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check HTTPS RPC
+        run: |
+          RESPONSE=$(curl -sf -X POST https://147-45-143-23.sslip.io/rpc \
+            -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+            --connect-timeout 15 --max-time 20)
+          echo "Response: $RESPONSE"
+          BLOCK=$(echo "$RESPONSE" | python3 -c "import sys,json; print(int(json.load(sys.stdin)['result'],16))")
+          echo "Current block: $BLOCK"
+          [ "$BLOCK" -gt 0 ] && echo "✅ RPC OK, block #$BLOCK" || (echo "❌ RPC DOWN" && exit 1)
+
+      - name: Check Explorer
+        run: |
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://147-45-143-23.sslip.io/ --connect-timeout 15)
+          echo "Explorer HTTP status: $HTTP_CODE"
+          [ "$HTTP_CODE" = "200" ] && echo "✅ Explorer OK" || (echo "❌ Explorer DOWN ($HTTP_CODE)" && exit 1)

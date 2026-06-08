@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Unitsky String Technologies block explorer — Chain ID 778889, native token UST. EVM-compatible network with PoW mining smart contract.">
+  <meta name="keywords" content="UST, Unitsky, blockchain, explorer, Chain 778889, EVM, mining, crypto">
+  <meta name="application-name" content="Unitsky Explorer">
+  <meta property="og:title" content="Unitsky Explorer — UST Chain 778889">
+  <meta property="og:description" content="Block explorer for Unitsky String Technologies — EVM network, native token UST, Chain ID 778889.">
+  <meta property="og:image" content="https://147-45-143-23.sslip.io/icon.svg">
+  <meta property="og:url" content="https://147-45-143-23.sslip.io">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Unitsky Explorer — UST Chain 778889">
+  <meta name="twitter:description" content="Block explorer for Unitsky String Technologies EVM network.">
+  <meta name="twitter:image" content="https://147-45-143-23.sslip.io/icon.svg">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://147-45-143-23.sslip.io">
+  <title>Unitsky Explorer — Chain 778889 | UST</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4f;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --green: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      justify-content: space-between;
+    }
+    .logo { font-size: 1.25rem; font-weight: 700; }
+    .logo span { color: var(--muted); font-weight: 400; font-size: 0.85rem; }
+    .search {
+      flex: 1;
+      min-width: 220px;
+      max-width: 520px;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .search input {
+      flex: 1;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+    .search button {
+      padding: 0.55rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .stat label { display: block; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat value { display: block; font-size: 1.1rem; font-weight: 600; margin-top: 0.25rem; word-break: break-all; }
+    .stat value.mono { font-family: ui-monospace, monospace; font-size: 0.85rem; }
+    h2 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--muted); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td { padding: 0.65rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+    tr:last-child td { border-bottom: none; }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.82rem; }
+    .hash { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: bottom; }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .panel h1 { font-size: 1.1rem; margin-bottom: 1rem; }
+    .row { display: grid; grid-template-columns: 140px 1fr; gap: 0.5rem 1rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    .row dt { color: var(--muted); }
+    .row dd { word-break: break-all; }
+    .err { color: #f87171; padding: 1rem; background: #450a0a44; border-radius: 8px; margin-bottom: 1rem; }
+    .live { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--green); font-size: 0.8rem; }
+    .live::before { content: ""; width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 50% { opacity: 0.4; } }
+    footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 2rem; }
+  .about { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .about h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+  .about p { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
+  .about .links { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; font-size: 0.85rem; }
+  .tag { display: inline-block; background: #1e3a5f; color: #93c5fd; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; margin: 2px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Unitsky Explorer <span>Chain 778889 · UST</span></div>
+    <form class="search" id="searchForm">
+      <input id="searchInput" placeholder="Блок / tx hash / адрес…" autocomplete="off">
+      <button type="submit">Найти</button>
+    </form>
+    <div class="live" id="live">live</div>
+  </header>
+  <main id="app"></main>
+  <footer>
+    Unitsky String Technologies &nbsp;·&nbsp; Chain ID 778889 &nbsp;·&nbsp; Native token UST &nbsp;·&nbsp;
+    <a href="#/about">About</a> &nbsp;·&nbsp;
+    <a href="https://github.com/klaren1987/unitsky-chain" target="_blank" rel="noopener">GitHub</a> &nbsp;·&nbsp;
+    <a href="/rpc" target="_blank">RPC</a>
+  </footer>
+  <script>
+    const RPC = location.origin + "/rpc";
+    let latest = 0;
+
+    async function rpc(method, params = []) {
+      const res = await fetch(RPC, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message || "RPC error");
+      return data.result;
+    }
+
+    function hex(n) { return Number.parseInt(n, 16); }
+    function fmtNum(n) { return n.toLocaleString("ru-RU"); }
+    function short(s, a = 8, b = 6) {
+      if (!s || s.length < a + b + 2) return s;
+      return s.slice(0, a + 2) + "…" + s.slice(-b);
+    }
+    function fmtTime(ts) {
+      if (!ts) return "—";
+      return new Date(ts * 1000).toLocaleString("ru-RU");
+    }
+    function fmtWei(hexWei) {
+      const v = BigInt(hexWei || "0x0");
+      const whole = v / 10n ** 18n;
+      const frac = v % 10n ** 18n;
+      const fracStr = frac.toString().padStart(18, "0").replace(/0+$/, "");
+      return fracStr ? `${whole}.${fracStr}` : whole.toString();
+    }
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    }
+    function linkTx(h) { return `<a class="mono hash" href="#/tx/${h}" title="${esc(h)}">${short(h)}</a>`; }
+    function linkBlock(n) { return `<a href="#/block/${n}">${fmtNum(n)}</a>`; }
+    function linkAddr(a) { return `<a class="mono hash" href="#/address/${a}" title="${esc(a)}">${short(a)}</a>`; }
+
+    function showError(msg) {
+      document.getElementById("app").innerHTML = `<div class="err">${esc(msg)}</div>`;
+    }
+
+    async function home() {
+      const app = document.getElementById("app");
+      app.innerHTML = `<div class="stats" id="stats"></div><h2>Последние блоки</h2><table><thead><tr><th>Блок</th><th>Hash</th><th>Tx</th><th>Время</th></tr></thead><tbody id="blocks"></tbody></table>`;
+      try {
+        const chainId = hex(await rpc("eth_chainId"));
+        const blockHex = await rpc("eth_blockNumber");
+        latest = hex(blockHex);
+        document.getElementById("stats").innerHTML = `
+          <div class="stat"><label>Chain ID</label><value>${fmtNum(chainId)}</value></div>
+          <div class="stat"><label>Последний блок</label><value>${fmtNum(latest)}</value></div>
+          <div class="stat"><label>RPC</label><value class="mono">${esc(RPC)}</value></div>
+          <div class="stat"><label>Символ</label><value>UST</value></div>`;
+        await loadBlocks(latest, 20);
+      } catch (e) {
+        showError(e.message);
+      }
+    }
+
+    async function loadBlocks(from, count) {
+      const tbody = document.getElementById("blocks");
+      if (!tbody) return;
+      const rows = [];
+      for (let i = 0; i < count && from - i >= 0; i++) {
+        const n = from - i;
+        const b = await rpc("eth_getBlockByNumber", ["0x" + n.toString(16), false]);
+        if (!b) continue;
+        rows.push(`<tr>
+          <td>${linkBlock(n)}</td>
+          <td><a class="mono hash" href="#/block/${n}">${short(b.hash)}</a></td>
+          <td>${(b.transactions || []).length}</td>
+          <td>${fmtTime(hex(b.timestamp))}</td>
+        </tr>`);
+      }
+      tbody.innerHTML = rows.join("");
+    }
+
+    async function showBlock(num) {
+      const n = Number(num);
+      if (!Number.isFinite(n) || n < 0) return showError("Неверный номер блока");
+      const b = await rpc("eth_getBlockByNumber", ["0x" + n.toString(16), true]);
+      if (!b) return showError("Блок не найден");
+      const txs = (b.transactions || []).map(tx => `<tr>
+        <td>${linkTx(tx.hash)}</td>
+        <td>${linkAddr(tx.from)}</td>
+        <td>${tx.to ? linkAddr(tx.to) : "<em>contract</em>"}</td>
+        <td class="mono">${fmtWei(tx.value)} UST</td>
+      </tr>`).join("") || `<tr><td colspan="4">Нет транзакций</td></tr>`;
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <h1>Блок ${fmtNum(n)}</h1>
+          <dl class="row"><dt>Hash</dt><dd class="mono">${esc(b.hash)}</dd></dl>
+          <dl class="row"><dt>Parent</dt><dd class="mono">${esc(b.parentHash)}</dd></dl>
+          <dl class="row"><dt>Miner</dt><dd>${linkAddr(b.miner)}</dd></dl>
+          <dl class="row"><dt>Timestamp</dt><dd>${fmtTime(hex(b.timestamp))}</dd></dl>
+          <dl class="row"><dt>Gas used</dt><dd>${fmtNum(hex(b.gasUsed))} / ${fmtNum(hex(b.gasLimit))}</dd></dl>
+          <dl class="row"><dt>Transactions</dt><dd>${(b.transactions || []).length}</dd></dl>
+        </div>
+        <h2>Транзакции</h2>
+        <table><thead><tr><th>Hash</th><th>From</th><th>To</th><th>Value</th></tr></thead><tbody>${txs}</tbody></table>
+        <p style="margin-top:1rem"><a href="#">← На главную</a></p>`;
+    }
+
+    async function showTx(hash) {
+      if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) return showError("Неверный hash транзакции");
+      const tx = await rpc("eth_getTransactionByHash", [hash]);
+      if (!tx) return showError("Транзакция не найдена");
+      const receipt = await rpc("eth_getTransactionReceipt", [hash]);
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <h1>Транзакция</h1>
+          <dl class="row"><dt>Hash</dt><dd class="mono">${esc(tx.hash)}</dd></dl>
+          <dl class="row"><dt>Block</dt><dd>${linkBlock(hex(tx.blockNumber))}</dd></dl>
+          <dl class="row"><dt>From</dt><dd>${linkAddr(tx.from)}</dd></dl>
+          <dl class="row"><dt>To</dt><dd>${tx.to ? linkAddr(tx.to) : "<em>contract create</em>"}</dd></dl>
+          <dl class="row"><dt>Value</dt><dd>${fmtWei(tx.value)} UST</dd></dl>
+          <dl class="row"><dt>Gas</dt><dd>${fmtNum(hex(tx.gas))} @ ${fmtNum(hex(tx.gasPrice))} wei</dd></dl>
+          <dl class="row"><dt>Status</dt><dd>${receipt ? (hex(receipt.status) === 1 ? "✅ Success" : "❌ Failed") : "—"}</dd></dl>
+          <dl class="row"><dt>Input</dt><dd class="mono" style="font-size:0.75rem">${esc(tx.input)}</dd></dl>
+        </div>
+        <p><a href="#">← На главную</a></p>`;
+    }
+
+    async function showAddress(addr) {
+      if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) return showError("Неверный адрес");
+      const balance = await rpc("eth_getBalance", [addr, "latest"]);
+      const nonce = hex(await rpc("eth_getTransactionCount", [addr, "latest"]));
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <h1>Адрес</h1>
+          <dl class="row"><dt>Address</dt><dd class="mono">${esc(addr)}</dd></dl>
+          <dl class="row"><dt>Balance</dt><dd><strong>${fmtWei(balance)} UST</strong></dd></dl>
+          <dl class="row"><dt>Nonce</dt><dd>${fmtNum(nonce)}</dd></dl>
+        </div>
+        <p><a href="#">← На главную</a></p>`;
+    }
+
+    function showAbout() {
+      document.getElementById("app").innerHTML = `
+        <div class="about">
+          <h2>Unitsky String Technologies — EVM Network</h2>
+          <p>Unitsky is an independent EVM-compatible blockchain with native token <strong>UST</strong>. Blocks are produced every 5 seconds via Clique PoA. Token distribution is fair and permissionless through a Proof-of-Work smart contract.</p>
+          <p>
+            <span class="tag">Chain ID 778889</span>
+            <span class="tag">EVM Compatible</span>
+            <span class="tag">PoW Mining</span>
+            <span class="tag">Geth</span>
+            <span class="tag">HTTPS RPC</span>
+            <span class="tag">Let's Encrypt TLS</span>
+          </p>
+          <div class="links">
+            <a href="https://github.com/klaren1987/unitsky-chain" target="_blank" rel="noopener">📦 GitHub</a>
+            <a href="https://github.com/DefiLlama/chainlist/pull/2830" target="_blank" rel="noopener">🔗 Chainlist PR</a>
+            <a href="/rpc" target="_blank">⚡ RPC Endpoint</a>
+          </div>
+        </div>
+        <div class="panel">
+          <h1>MetaMask Setup</h1>
+          <dl class="row"><dt>Network Name</dt><dd>Unitsky String Technologies</dd></dl>
+          <dl class="row"><dt>RPC URL</dt><dd class="mono">https://147-45-143-23.sslip.io/rpc</dd></dl>
+          <dl class="row"><dt>Chain ID</dt><dd>778889</dd></dl>
+          <dl class="row"><dt>Symbol</dt><dd>UST</dd></dl>
+          <dl class="row"><dt>Explorer</dt><dd class="mono">https://147-45-143-23.sslip.io</dd></dl>
+        </div>
+        <div class="panel">
+          <h1>Mining</h1>
+          <dl class="row"><dt>Contract</dt><dd class="mono">0x5FbDB2315678afecb367f032d93F642f64180aa3</dd></dl>
+          <dl class="row"><dt>Reward</dt><dd>1 UST per valid proof-of-work</dd></dl>
+          <dl class="row"><dt>Algorithm</dt><dd>keccak256(miner, nonce, workBlock)</dd></dl>
+          <dl class="row"><dt>Block window</dt><dd>10 blocks</dd></dl>
+          <dl class="row"><dt>GPU</dt><dd>NVIDIA CUDA supported (~686 MH/s on RTX 4060)</dd></dl>
+        </div>
+        <p style="margin-top:1rem"><a href="#">← На главную</a></p>`;
+    }
+
+    function route() {
+      const hash = location.hash.slice(1) || "/";
+      const parts = hash.split("/").filter(Boolean);
+      if (parts.length === 0) return home();
+      if (parts[0] === "block") return showBlock(parts[1]);
+      if (parts[0] === "tx") return showTx(parts[1]);
+      if (parts[0] === "address") return showAddress(parts[1]);
+      if (parts[0] === "about") return showAbout();
+      home();
+    }
+
+    document.getElementById("searchForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const q = document.getElementById("searchInput").value.trim();
+      if (/^\d+$/.test(q)) location.hash = "#/block/" + q;
+      else if (/^0x[0-9a-fA-F]{64}$/.test(q)) location.hash = "#/tx/" + q;
+      else if (/^0x[0-9a-fA-F]{40}$/.test(q)) location.hash = "#/address/" + q;
+      else showError("Введите номер блока, tx hash (0x…) или адрес (0x…)");
+    });
+
+    window.addEventListener("hashchange", route);
+    route();
+    setInterval(() => {
+      if (!location.hash || location.hash === "#/" || location.hash === "#") home();
+    }, 8000);
+  </script>
+</body>
+</html>

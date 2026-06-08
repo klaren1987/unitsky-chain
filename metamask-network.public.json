@@ -1,0 +1,13 @@
+{
+  "chainId": "0xBE289",
+  "chainName": "Unitsky String Technologies",
+  "nativeCurrency": {
+    "name": "Unitsky Token",
+    "symbol": "UST",
+    "decimals": 18
+  },
+  "rpcUrls": [
+    "https://147-45-143-23.sslip.io/rpc"
+  ],
+  "blockExplorerUrls": ["https://147-45-143-23.sslip.io"]
+}

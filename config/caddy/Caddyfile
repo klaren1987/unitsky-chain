@@ -1,0 +1,48 @@
+# Public HTTPS front for Unitsky String Technologies (Chain ID 778889)
+# Domain sslip.io resolves 147-45-143-23.sslip.io → 147.45.143.23 (VPS DNAT → Windows :80/:443)
+
+147-45-143-23.sslip.io {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	# JSON-RPC (MetaMask, Chainlist, wallets)
+	handle_path /rpc* {
+		header Access-Control-Allow-Origin *
+		header Access-Control-Allow-Methods "POST, GET, OPTIONS"
+		header Access-Control-Allow-Headers "Content-Type"
+		@rpcOptions method OPTIONS
+		handle @rpcOptions {
+			respond 204
+		}
+		reverse_proxy unitsky-string-node:8545
+	}
+
+	# WebSocket
+	handle_path /ws* {
+		reverse_proxy unitsky-string-node:8546
+	}
+
+	# Chain icon for wallets / Chainlist
+	handle /icon.svg {
+		root * /srv/static
+		file_server
+	}
+
+	handle /robots.txt {
+		root * /srv/static
+		file_server
+	}
+
+	# Block explorer (static SPA, Geth-compatible via /rpc)
+	@notAcme not path /.well-known/acme-challenge/*
+	handle @notAcme {
+		root * /srv/explorer
+		try_files {path} /index.html
+		file_server
+	}
+}
