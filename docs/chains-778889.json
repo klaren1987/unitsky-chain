@@ -1,0 +1,28 @@
+{
+  "name": "UST Network",
+  "chain": "UST",
+  "icon": "ust",
+  "rpc": [
+    "https://147-45-143-23.sslip.io/rpc"
+  ],
+  "faucets": [],
+  "nativeCurrency": {
+    "name": "UST",
+    "symbol": "UST",
+    "decimals": 18
+  },
+  "features": [
+    { "name": "EIP155" }
+  ],
+  "infoURL": "https://147-45-143-23.sslip.io",
+  "shortName": "ust",
+  "chainId": 778889,
+  "networkId": 778889,
+  "explorers": [
+    {
+      "name": "UST Explorer",
+      "url": "https://147-45-143-23.sslip.io",
+      "standard": "none"
+    }
+  ]
+}

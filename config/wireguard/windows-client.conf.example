@@ -1,0 +1,13 @@
+# WireGuard client — import into WireGuard app on Windows.
+# Replace: CLIENT_PRIVATE_KEY, SERVER_PUBLIC_KEY, SERVER_PUBLIC_IP
+
+[Interface]
+PrivateKey = CLIENT_PRIVATE_KEY
+Address = 10.13.13.2/32
+MTU = 1420
+
+[Peer]
+PublicKey = SERVER_PUBLIC_KEY
+Endpoint = SERVER_PUBLIC_IP:51820
+AllowedIPs = 10.13.13.0/24
+PersistentKeepalive = 25

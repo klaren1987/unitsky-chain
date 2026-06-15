@@ -1,0 +1,13 @@
+{
+  "chainId": "0xBE289",
+  "chainName": "UST Network",
+  "nativeCurrency": {
+    "name": "UST",
+    "symbol": "UST",
+    "decimals": 18
+  },
+  "rpcUrls": [
+    "https://147-45-143-23.sslip.io/rpc"
+  ],
+  "blockExplorerUrls": ["https://147-45-143-23.sslip.io"]
+}

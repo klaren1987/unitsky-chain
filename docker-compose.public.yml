@@ -1,0 +1,85 @@
+# Public HTTPS RPC + block explorer.
+# Run on the node host after docker-compose.windows-node.yml (or docker-compose.node.yml) is up.
+#
+# Usage:
+#   docker compose -f docker-compose.public.yml up -d
+
+services:
+  rpc-filter:
+    build:
+      context: .
+      dockerfile: docker/rpc-filter.Dockerfile
+    image: tebot-rpc-filter
+    container_name: unitsky-string-rpc-filter
+    restart: unless-stopped
+    environment:
+      GETH_URL: http://unitsky-string-node:8545
+      GETH_WS_URL: ws://unitsky-string-node:8546
+      RPC_FILTER_PORT: "8547"
+      RPC_FILTER_WS_PORT: "8548"
+      USST_CHAIN_ID: ${USST_CHAIN_ID:-778889}
+      USST_FAUCET_KEY: ${USST_FAUCET_KEY:-}
+      USST_FAUCET_AMOUNT: ${USST_FAUCET_AMOUNT:-0.01}
+      USST_FAUCET_COOLDOWN: ${USST_FAUCET_COOLDOWN:-86400}
+      USST_FAUCET_MAX_BALANCE: ${USST_FAUCET_MAX_BALANCE:-0.1}
+      BRIDGE_TREASURY_ADDRESS: ${BRIDGE_TREASURY_ADDRESS:-}
+      BRIDGED_USDT_ADDRESS: ${BRIDGED_USDT_ADDRESS:-}
+      BRIDGE_OPERATOR_KEY: ${BRIDGE_OPERATOR_KEY:-}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8547', timeout=2)\" 2>/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - tebot_default
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: unitsky-string-caddy
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    volumes:
+      - ./config/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./config/caddy/static:/srv/static:ro
+      - ./config/explorer:/srv/explorer:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - tebot_default
+
+  pool-watchdog:
+    build:
+      context: .
+      dockerfile: docker/rpc-filter.Dockerfile
+    image: tebot-rpc-filter
+    container_name: unitsky-string-pool-watchdog
+    restart: unless-stopped
+    command: python /app/scripts/pool-watchdog.py
+    environment:
+      USST_RPC: http://unitsky-string-node:8545
+      USST_CHAIN_ID: ${USST_CHAIN_ID:-778889}
+      USST_CONTRACT_ADDRESS: ${USST_CONTRACT_ADDRESS:-}
+      USST_DEPLOYER_KEY: ${USST_DEPLOYER_KEY:-}
+      POOL_MIN_UST: ${POOL_MIN_UST:-1000}
+      POOL_REFILL_UST: ${POOL_REFILL_UST:-5000}
+      POOL_CHECK_INTERVAL: ${POOL_CHECK_INTERVAL:-60}
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./logs:/app/logs
+    networks:
+      - tebot_default
+    depends_on:
+      - rpc-filter
+
+networks:
+  tebot_default:
+    external: true
+
+volumes:
+  caddy_data:
+  caddy_config:

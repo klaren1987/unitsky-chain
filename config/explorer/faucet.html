@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="UST Faucet — get 0.01 UST gas for free to start mining on Chain 778889.">
+  <meta property="og:title" content="UST Faucet — Free gas for Chain 778889">
+  <meta property="og:description" content="Claim free UST gas to start mining on the UST Network network.">
+  <meta property="og:image" content="https://147-45-143-23.sslip.io/icon.svg">
+  <meta property="og:url" content="https://147-45-143-23.sslip.io/faucet">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://147-45-143-23.sslip.io/faucet">
+  <title>UST Faucet — Get initial gas</title>
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --border: #30363d;
+      --accent: #d4a017; --accent2: #f0c040;
+      --text: #e6edf3; --muted: #8b949e; --green: #3fb950; --red: #f85149;
+      --mint: #00d4aa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+    header {
+      border-bottom: 1px solid var(--border); padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .logo { font-weight: 700; font-size: 1.1rem; color: var(--accent2); }
+    .logo span { color: var(--muted); font-weight: 400; font-size: 0.85rem; margin-left: 8px; }
+    nav a { color: var(--muted); text-decoration: none; margin-left: 20px; font-size: 0.9rem; }
+    nav a:hover, nav a.active { color: var(--text); }
+    main { max-width: 520px; margin: 56px auto; padding: 0 16px; }
+    h1 { font-size: 1.6rem; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+    }
+
+    /* Faucet balance pill */
+    .faucet-balance {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; color: var(--muted); margin-bottom: 20px;
+      padding: 8px 12px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px;
+    }
+    .faucet-balance .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+    .faucet-balance .dot.low { background: var(--accent); }
+    .faucet-balance .dot.empty { background: var(--red); }
+
+    /* Input row with connect button */
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 8px; }
+    .input-row { display: flex; gap: 8px; }
+    input[type="text"] {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; color: var(--text);
+      font-size: 0.9rem; font-family: monospace; outline: none; transition: border-color 0.15s;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    input[type="text"].valid   { border-color: var(--green); }
+    input[type="text"].invalid { border-color: var(--red); }
+
+    /* MetaMask connect button */
+    .btn-mm {
+      flex-shrink: 0; padding: 0 14px; height: 46px;
+      background: #1c2128; border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-size: 0.8rem;
+      font-weight: 600; cursor: pointer; display: flex; align-items: center;
+      gap: 6px; transition: border-color 0.15s, background 0.15s; white-space: nowrap;
+    }
+    .btn-mm:hover { border-color: var(--accent); background: #21262d; }
+    .btn-mm img { width: 16px; height: 16px; }
+
+    /* Claim button */
+    button#claimBtn {
+      margin-top: 14px; width: 100%; padding: 14px;
+      background: var(--accent); color: #000; border: none;
+      border-radius: 10px; font-weight: 700; font-size: 1rem;
+      cursor: pointer; transition: background 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    button#claimBtn:hover:not(:disabled) { background: var(--accent2); }
+    button#claimBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Spinner */
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000; border-radius: 50%;
+      animation: spin 0.7s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #status { margin-top: 18px; font-size: 0.9rem; line-height: 1.7; min-height: 24px; }
+    .ok   { color: var(--green); }
+    .err  { color: var(--red); }
+    .info { color: var(--muted); }
+    .tx-link { word-break: break-all; font-family: monospace; font-size: 0.8rem; }
+
+    .rules {
+      margin-top: 24px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; font-size: 0.83rem; color: var(--muted);
+      line-height: 1.7;
+    }
+    .rules strong { color: var(--text); }
+
+    footer {
+      margin-top: 48px; text-align: center; font-size: 0.8rem; color: var(--muted);
+      padding-bottom: 32px;
+    }
+    footer a { color: var(--muted); text-decoration: none; margin: 0 8px; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">UST Explorer <span>Chain 778889</span></div>
+  <nav>
+    <a href="/">Explorer</a>
+    <a href="/dex">DEX</a>
+    <a href="/faucet" class="active">Faucet</a>
+    <a href="/bridge">Bridge</a>
+  </nav>
+</header>
+
+<main>
+  <h1>💧 UST Faucet</h1>
+  <p class="subtitle">
+    New to UST mining? Every <code>mine()</code> transaction costs a tiny amount of gas (~0.00005 UST).
+    Enter your wallet address to receive <strong>0.01 UST</strong> — enough for ~200 mining transactions.
+  </p>
+
+  <div class="card">
+    <div class="faucet-balance" id="faucetBal">
+      <div class="dot" id="balDot"></div>
+      <span id="balText">Checking faucet balance…</span>
+    </div>
+
+    <!-- Honeypot: hidden from real users, bots fill it automatically -->
+    <input type="text" name="website" id="hp_field" tabindex="-1" autocomplete="off"
+      style="opacity:0;position:absolute;height:0;width:0;border:none;padding:0;pointer-events:none;" aria-hidden="true">
+
+    <label for="addr">Your wallet address</label>
+    <div class="input-row">
+      <input type="text" id="addr" placeholder="0x…" maxlength="42" spellcheck="false" autocomplete="off" />
+      <button class="btn-mm" id="mmBtn" onclick="connectMM()" title="Auto-fill from MetaMask">
+        <svg width="16" height="16" viewBox="0 0 35 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32.96 1L19.38 10.92l2.52-5.97L32.96 1z" fill="#E2761B" stroke="#E2761B" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2.03 1l13.47 10.01-2.4-6.06L2.03 1z" fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M28.2 23.53l-3.62 5.54 7.75 2.13 2.22-7.54-6.35-.13zM.48 23.66l2.2 7.54 7.75-2.13-3.61-5.54-6.34.13z" fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Connect
+      </button>
+    </div>
+
+    <button id="claimBtn" onclick="claim()">
+      <span class="spinner" id="spinner"></span>
+      <span id="btnText">Request 0.01 UST</span>
+    </button>
+    <div id="status"></div>
+
+    <div class="rules">
+      <strong>Fair use rules (for everyone's benefit):</strong><br>
+      · One claim per address every 24 hours<br>
+      · Only for wallets with less than 0.1 UST<br>
+      · Max 5 claims per IP per day<br>
+      · Amount: <strong>0.01 UST</strong> (enough for ~200 mining transactions)<br>
+      · UST is the native gas token of Chain ID 778889<br><br>
+      <span style="font-size:0.79rem">The faucet is funded from the community pool to help new participants
+      join the network. Abuse (bots, draining) is blocked automatically.</span>
+    </div>
+  </div>
+</main>
+
+<div style="max-width:520px;margin:0 auto 40px;padding:0 16px">
+  <div style="background:#0d1117;border:1px solid #0d3d32;border-left:3px solid #00d4aa;border-radius:12px;padding:20px">
+    <div style="font-size:0.78rem;color:#00d4aa;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px">💎 Support the Network</div>
+    <p style="font-size:0.85rem;color:#8b949e;line-height:1.65;margin-bottom:14px">
+      The mining pool is sustained by the community. Any UST sent to the mining contract directly increases rewards for all miners and extends the network's lifespan.
+    </p>
+    <p style="font-size:0.8rem;color:#8b949e;margin-bottom:12px">
+      Mining contract:<br>
+      <code style="font-size:0.76rem;color:#00d4aa;word-break:break-all">0x71e63fb263613e0ca086Ef4A995eB5A2D148Ecb0</code>
+    </p>
+    <button id="fundBtn" style="padding:10px 20px;background:#0d3d32;border:1px solid #00d4aa;border-radius:8px;color:#00d4aa;font-weight:600;font-size:0.85rem;cursor:pointer;width:100%">
+      Send UST to Pool via MetaMask
+    </button>
+    <div id="fundMsg" style="margin-top:10px;font-size:0.8rem;color:#8b949e;min-height:18px"></div>
+  </div>
+</div>
+
+<footer>
+  <a href="/">Explorer</a>
+  <a href="/dex">DEX Swap</a>
+  <a href="/bridge">Bridge</a>
+  <a href="/rpc">RPC</a>
+  <a href="https://github.com/klaren1987/UST-chain" target="_blank" rel="noopener">GitHub</a>
+</footer>
+
+<script>
+const MINE_CONTRACT = "0x71e63fb263613e0ca086Ef4A995eB5A2D148Ecb0";
+document.getElementById("fundBtn").onclick = async () => {
+  const msg = document.getElementById("fundMsg");
+  if (!window.ethereum) {
+    msg.textContent = "MetaMask not detected. Send UST manually to the address above.";
+    msg.style.color = "var(--red)";
+    return;
+  }
+  try {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    msg.textContent = "Opening MetaMask — enter any amount of UST…";
+    msg.style.color = "var(--muted)";
+    await window.ethereum.request({
+      method: "eth_sendTransaction",
+      params: [{ from: accounts[0], to: MINE_CONTRACT, value: "0x" + BigInt(Math.round(0.1 * 1e18)).toString(16), gas: "0x5208" }],
+    });
+    msg.textContent = "✓ Transaction submitted. Thank you for supporting the network.";
+    msg.style.color = "var(--green)";
+  } catch (e) {
+    msg.textContent = "Cancelled.";
+    msg.style.color = "var(--muted)";
+  }
+};
+</script>
+
+<script>
+const FAUCET_API = location.origin + "/faucet";
+const RPC_URL    = location.origin + "/rpc";
+const EXPLORER   = location.origin;
+
+/* ── Faucet balance ── */
+async function loadFaucetBalance() {
+  try {
+    const r = await fetch(RPC_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", method: "eth_getBalance",
+        params: [await getFaucetAddress(), "latest"], id: 1 }),
+    });
+    const data = await r.json();
+    const wei  = BigInt(data.result || "0x0");
+    const ust  = Number(wei) / 1e18;
+    const dot  = document.getElementById("balDot");
+    const txt  = document.getElementById("balText");
+    if (ust < 0.1) {
+      dot.className = "dot empty";
+      txt.textContent = `Faucet balance: ${ust.toFixed(4)} UST (low — contact admin)`;
+    } else if (ust < 1) {
+      dot.className = "dot low";
+      txt.textContent = `Faucet balance: ${ust.toFixed(4)} UST`;
+    } else {
+      dot.className = "dot";
+      txt.textContent = `Faucet balance: ${ust.toFixed(2)} UST — funded ✓`;
+    }
+  } catch {
+    document.getElementById("balText").textContent = "Faucet status unknown";
+  }
+}
+
+async function getFaucetAddress() {
+  const r = await fetch(FAUCET_API + "/status");
+  const d = await r.json();
+  return d.address || "0x0000000000000000000000000000000000000000";
+}
+
+/* ── Input validation ── */
+const addrInput = document.getElementById("addr");
+addrInput.addEventListener("input", () => {
+  const v = addrInput.value.trim();
+  addrInput.classList.remove("valid", "invalid");
+  if (v.length === 0) return;
+  if (v.length === 42 && /^0x[0-9a-fA-F]{40}$/.test(v)) {
+    addrInput.classList.add("valid");
+  } else if (v.length > 2) {
+    addrInput.classList.add("invalid");
+  }
+});
+
+addrInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") claim();
+});
+
+/* ── MetaMask connect ── */
+async function connectMM() {
+  if (!window.ethereum) {
+    setStatus("MetaMask not detected. Install it at metamask.io or paste your address manually.", "err");
+    return;
+  }
+  try {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    if (accounts[0]) {
+      addrInput.value = accounts[0];
+      addrInput.classList.add("valid");
+      document.getElementById("mmBtn").textContent = "✓ Connected";
+      document.getElementById("mmBtn").style.color = "var(--green)";
+    }
+  } catch (e) {
+    setStatus("MetaMask connection cancelled.", "info");
+  }
+}
+
+/* ── Claim ── */
+function setStatus(msg, cls) {
+  const el = document.getElementById("status");
+  el.innerHTML = `<span class="${cls}">${msg}</span>`;
+}
+
+function setStatusHtml(html) {
+  document.getElementById("status").innerHTML = html;
+}
+
+async function claim() {
+  const addr = addrInput.value.trim();
+  if (!addr || addr.length !== 42 || !addr.startsWith("0x")) {
+    setStatus("Enter a valid Ethereum address (0x… 42 chars)", "err");
+    return;
+  }
+
+  const btn     = document.getElementById("claimBtn");
+  const spinner = document.getElementById("spinner");
+  const btnText = document.getElementById("btnText");
+  btn.disabled       = true;
+  spinner.style.display = "block";
+  btnText.textContent   = "Sending…";
+  setStatus("Processing request…", "info");
+
+  try {
+    const hp = document.getElementById("hp_field").value;
+    const res  = await fetch(FAUCET_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address: addr, _hp: hp }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const short = data.txHash.slice(0, 10) + "…" + data.txHash.slice(-6);
+      setStatusHtml(
+        `<span class="ok">✓ Sent ${data.amount}!</span><br>` +
+        `<span class="info">tx: <a class="tx-link" href="${EXPLORER}/#/tx/${data.txHash}" target="_blank">${short}</a></span><br>` +
+        `<span class="info" style="font-size:0.8rem">You can now start mining. UST will arrive within seconds.</span>`
+      );
+      btnText.textContent = "Sent ✓";
+      loadFaucetBalance();
+    } else {
+      setStatus(data.error || "Unknown error", "err");
+      btn.disabled       = false;
+      btnText.textContent = "Request 0.01 UST";
+    }
+  } catch (e) {
+    setStatus("Network error: " + e.message, "err");
+    btn.disabled       = false;
+    btnText.textContent = "Request 0.01 UST";
+  } finally {
+    spinner.style.display = "none";
+  }
+}
+
+/* ── Init ── */
+if (window.ethereum?.selectedAddress) {
+  addrInput.value = window.ethereum.selectedAddress;
+  addrInput.classList.add("valid");
+}
+loadFaucetBalance();
+</script>
+</body>
+</html>

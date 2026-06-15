@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clear Cache — UST Explorer</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0b0f14; color: #e8edf4; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .box { text-align: center; max-width: 420px; padding: 2rem; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.75rem; color: #00d4aa; }
+    p { color: #8b9cb3; margin-bottom: 1.5rem; line-height: 1.6; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #2a3548; border-top-color: #00d4aa; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.25rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ok { color: #22c55e; font-size: 2rem; display: none; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="spinner" id="spin"></div>
+    <div class="ok" id="ok">✓</div>
+    <h1>Clearing cache…</h1>
+    <p id="msg">Removing old Service Worker and clearing browser cache…</p>
+  </div>
+  <script>
+    async function killAll() {
+      const promises = [];
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        regs.forEach(r => promises.push(r.unregister()));
+      }
+      if ('caches' in window) {
+        const names = await caches.keys();
+        names.forEach(n => promises.push(caches.delete(n)));
+      }
+      await Promise.allSettled(promises);
+    }
+
+    killAll().then(() => {
+      document.getElementById('spin').style.display = 'none';
+      document.getElementById('ok').style.display = 'block';
+      document.getElementById('msg').textContent = 'Done! Redirecting to Explorer…';
+      setTimeout(() => { location.replace('/'); }, 1200);
+    }).catch(() => {
+      location.replace('/');
+    });
+  </script>
+</body>
+</html>

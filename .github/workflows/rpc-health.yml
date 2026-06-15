@@ -1,0 +1,147 @@
+name: RPC Health Check
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 hours
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check HTTPS RPC
+        run: |
+          set +e   # don't abort on individual command failure
+          RPC="https://147-45-143-23.sslip.io/rpc"
+          FAIL=0
+
+          # Retry up to 3 times with 10s delay
+          for i in 1 2 3; do
+            echo "Attempt $i/3..."
+            HTTP_CODE=$(curl -s -o /tmp/rpc_resp.json -w "%{http_code}" \
+              -X POST "$RPC" \
+              -H "Content-Type: application/json" \
+              -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+              --connect-timeout 15 --max-time 25)
+            CURL_CODE=$?
+
+            echo "  curl exit: $CURL_CODE  HTTP: $HTTP_CODE"
+            cat /tmp/rpc_resp.json 2>/dev/null || echo "  (no body)"
+
+            if [ "$CURL_CODE" -eq 0 ] && [ "$HTTP_CODE" = "200" ]; then
+              BLOCK=$(python3 -c "
+          import json, sys
+          try:
+              d = json.load(open('/tmp/rpc_resp.json'))
+              print(int(d['result'], 16))
+          except Exception as e:
+              print(0)
+          ")
+              echo "  Current block: $BLOCK"
+              if [ "$BLOCK" -gt 0 ]; then
+                echo "✅ RPC OK — block #$BLOCK"
+                FAIL=0
+                break
+              fi
+            fi
+            FAIL=1
+            [ "$i" -lt 3 ] && echo "  Retrying in 10s..." && sleep 10
+          done
+
+          [ "$FAIL" -eq 1 ] && echo "❌ RPC DOWN after 3 attempts" && exit 1
+          echo "RPC check passed."
+
+      - name: Check All Endpoints
+        run: |
+          FAIL=0
+          BASE="https://147-45-143-23.sslip.io"
+          PAGES="/ /dex /faucet /bridge /icon.svg /robots.txt"
+
+          for path in $PAGES; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              "${BASE}${path}" --connect-timeout 10 --max-time 15)
+            if [ "$CODE" = "200" ]; then
+              echo "✅ ${path} → $CODE"
+            else
+              echo "❌ ${path} → $CODE"
+              FAIL=1
+            fi
+          done
+
+          [ "$FAIL" -eq 1 ] && exit 1
+          echo "All endpoints OK."
+
+      - name: Check Bridge Status API
+        run: |
+          CODE=$(curl -s -o /tmp/bridge.json -w "%{http_code}" \
+            https://147-45-143-23.sslip.io/bridge/status \
+            --connect-timeout 10 --max-time 15)
+          echo "HTTP: $CODE"
+          cat /tmp/bridge.json 2>/dev/null
+
+          if [ "$CODE" = "200" ]; then
+            ENABLED=$(python3 -c "import json; d=json.load(open('/tmp/bridge.json')); print(d.get('enabled',False))")
+            echo "Bridge enabled: $ENABLED"
+            echo "✅ Bridge status API OK"
+          else
+            echo "❌ Bridge status API DOWN ($CODE)"
+            exit 1
+          fi
+
+      - name: Verify Mining Contract (USSTMine v4)
+        run: |
+          RPC="https://147-45-143-23.sslip.io/rpc"
+          CONTRACT="0x71e63fb263613e0ca086Ef4A995eB5A2D148Ecb0"
+          FAIL=0
+
+          call() {
+            curl -s -X POST "$RPC" -H "Content-Type: application/json" \
+              -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{\"to\":\"$CONTRACT\",\"data\":\"$1\"},\"latest\"],\"id\":1}" \
+              --connect-timeout 10 --max-time 15
+          }
+
+          # poolBalance() selector 0x96365d44
+          POOL=$(call "0x96365d44" | python3 -c "import json,sys; d=json.load(sys.stdin); print(int(d['result'],16)/1e18)" 2>/dev/null)
+          echo "Pool balance: $POOL UST"
+          if python3 -c "import sys; sys.exit(0 if float('${POOL:-0}') > 0 else 1)"; then
+            echo "✅ Pool funded: $POOL UST"
+          else
+            echo "❌ Pool balance is 0 — pool may be empty"
+            FAIL=1
+          fi
+
+          # reward() selector 0x228cb733
+          REWARD=$(call "0x228cb733" | python3 -c "import json,sys; d=json.load(sys.stdin); print(int(d['result'],16)/1e18)" 2>/dev/null)
+          echo "Current reward: $REWARD UST"
+          echo "✅ Contract responding"
+
+          # MIN_DIFFICULTY: verify v4 has it (selector for MIN_DIFFICULTY())
+          # keccak256("MIN_DIFFICULTY()") = 0xefa3c13e
+          MIN_D=$(call "0xefa3c13e" | python3 -c "import json,sys; d=json.load(sys.stdin); print(int(d['result'],16))" 2>/dev/null)
+          if python3 -c "import sys; sys.exit(0 if int('${MIN_D:-0}') >= 100000 else 1)"; then
+            echo "✅ MIN_DIFFICULTY = $MIN_D (v4 security)"
+          else
+            echo "❌ MIN_DIFFICULTY not found or too low — may be running old contract version"
+            FAIL=1
+          fi
+
+          [ "$FAIL" -eq 1 ] && exit 1
+          echo "Contract verification passed."
+
+      - name: Check Security Headers
+        run: |
+          FAIL=0
+          URL="https://147-45-143-23.sslip.io"
+          HEADERS=$(curl -s -I "$URL" --connect-timeout 10 --max-time 15 | tr '[:upper:]' '[:lower:]')
+
+          for header in "strict-transport-security" "x-content-type-options" "x-frame-options"; do
+            if echo "$HEADERS" | grep -q "$header"; then
+              echo "✅ $header present"
+            else
+              echo "❌ $header MISSING"
+              FAIL=1
+            fi
+          done
+
+          [ "$FAIL" -eq 1 ] && exit 1
+          echo "Security headers OK."

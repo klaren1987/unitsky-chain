@@ -1,0 +1,116 @@
+# Public HTTPS front (VPS DNAT → Windows :80/:443)
+# - sslip.io → Unitsky explorer + RPC
+
+147-45-143-23.sslip.io {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options SAMEORIGIN
+		Content-Security-Policy "default-src 'self' https: data:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; connect-src 'self' https: wss:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; frame-ancestors 'self'"
+	}
+
+	# Bridge API (GET /bridge/status, POST /bridge/deposit)
+	@bridgeApi {
+		path /bridge/status /bridge/deposit
+	}
+	handle @bridgeApi {
+		header Access-Control-Allow-Origin *
+		reverse_proxy unitsky-string-rpc-filter:8547 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 10s
+			}
+		}
+	}
+
+	# Faucet API — POST /faucet and GET /faucet/status go to rpc-filter
+	# GET /faucet falls through to the file_server below and serves faucet.html
+	@faucetApi {
+		path /faucet /faucet/*
+		method POST OPTIONS
+	}
+	handle @faucetApi {
+		header Access-Control-Allow-Origin *
+		header Access-Control-Allow-Methods "POST, OPTIONS"
+		header Access-Control-Allow-Headers "Content-Type"
+		reverse_proxy unitsky-string-rpc-filter:8547 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 15s
+			}
+		}
+	}
+	@faucetStatus {
+		path /faucet/status
+		method GET
+	}
+	handle @faucetStatus {
+		reverse_proxy unitsky-string-rpc-filter:8547 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 10s
+			}
+		}
+	}
+
+	# JSON-RPC (MetaMask, Chainlist, wallets)
+	# Routes through rpc-filter proxy which blocks eth_sendTransaction and other
+	# dangerous methods that could be used to drain the treasury.
+	handle_path /rpc* {
+		header Access-Control-Allow-Origin *
+		header Access-Control-Allow-Methods "POST, GET, OPTIONS"
+		header Access-Control-Allow-Headers "Content-Type"
+		@rpcOptions method OPTIONS
+		handle @rpcOptions {
+			respond 204
+		}
+		reverse_proxy unitsky-string-rpc-filter:8547 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 20s
+			}
+			# Return 503 (not 502) so clients know to retry
+			lb_try_duration 8s
+		}
+	}
+
+	# WebSocket — also routed through rpc-filter to block dangerous methods
+	handle_path /ws* {
+		reverse_proxy unitsky-string-rpc-filter:8548 {
+			transport http {
+				dial_timeout 5s
+			}
+		}
+	}
+
+	# Chain icon for wallets / Chainlist
+	handle /icon.svg {
+		root * /srv/static
+		file_server
+	}
+
+	handle /robots.txt {
+		root * /srv/static
+		file_server
+	}
+
+	# Block explorer (static SPA, Geth-compatible via /rpc)
+	@notAcme not path /.well-known/acme-challenge/*
+	handle @notAcme {
+		root * /srv/explorer
+		try_files {path} {path}.html /index.html
+		file_server
+
+		# Force-clear old Otterscan service worker cache on first visit
+		@htmlReq path /index.html /
+		header @htmlReq Cache-Control "no-store, no-cache, must-revalidate"
+		header @htmlReq Clear-Site-Data `"cache", "storage"`
+	}
+}
+
+# Additional virtual hosts can be added in separate .caddy files
+# and imported here:
+# import extra-sites.caddy

@@ -1,0 +1,53 @@
+# Server-only stack (blockchain + contract deploy, no local miner).
+# Use when miners run on other computers.
+
+services:
+  usst-node:
+    build:
+      context: .
+      dockerfile: docker/node.Dockerfile
+    container_name:?? UST-string-node
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${USST_RPC_PORT:-8545}:8545"
+      - "127.0.0.1:${USST_WS_PORT:-8546}:8546"
+      - "${USST_P2P_PORT:-30303}:30303"
+    volumes:
+      - ./chain/genesis.json:/genesis.json:ro
+      - usst-chaindata:/data
+    environment:
+      USST_CHAIN_ID: ${USST_CHAIN_ID:-778889}
+      USST_SIGNER_KEY: ${USST_SIGNER_KEY}
+      USST_SIGNER_ADDRESS: ${USST_SIGNER_ADDRESS:?USST_SIGNER_ADDRESS is required — set it in .env}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'curl -sf -X POST http://127.0.0.1:8545 -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_chainId\",\"params\":[],\"id\":1}" | grep -q "0xbe289"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  deploy:
+    build: .
+    container_name:?? UST-string-deploy
+    depends_on:
+      usst-node:
+        condition: service_healthy
+    volumes:
+      - usst-config:/data
+    environment:
+      USST_RPC: http://usst-node:8545
+      USST_CHAIN_ID: ${USST_CHAIN_ID:-778889}
+      USST_DEPLOYER_KEY: ${USST_DEPLOYER_KEY}
+      USST_DEPLOYED_PATH: /data/deployed.json
+      USST_FUND_ETHER: ${USST_FUND_ETHER:-10000}
+    entrypoint: ["/bin/sh", "/app/scripts/deploy-entrypoint.sh"]
+    restart: "no"
+
+
+volumes:
+  usst-chaindata:
+  usst-config:

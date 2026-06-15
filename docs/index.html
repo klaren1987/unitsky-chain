@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UST Network — UST Chain 778889</title>
+  <meta name="description" content="UST Network — EVM-compatible blockchain, Chain ID 778889, native token UST. Fair launch, PoW mining smart contract, public HTTPS RPC.">
+  <meta name="keywords" content="UST,?? UST, blockchain, EVM, Chain 778889, mining, crypto, Geth">
+  <meta property="og:title" content="UST Network — UST">
+  <meta property="og:description" content="Independent EVM chain, Chain ID 778889. Fair launch — 100% PoW mining. No ICO, no pre-mine.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/klaren1987/UST-chain/main/icon.svg">
+  <meta property="og:url" content="https://klaren1987.github.io/UST-chain/">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="https://raw.githubusercontent.com/klaren1987/UST-chain/main/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://klaren1987.github.io/UST-chain/">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+    a { color: #58a6ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header { background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%); border-bottom: 1px solid #30363d; padding: 3rem 1rem; text-align: center; }
+    header img { width: 80px; height: 80px; margin-bottom: 1rem; filter: drop-shadow(0 0 20px #58a6ff55); }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p { color: #8b949e; margin-top: 0.5rem; font-size: 1.1rem; }
+    .badges { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+    .badge { background: #21262d; border: 1px solid #30363d; border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.8rem; color: #58a6ff; }
+    .badge.green { color: #3fb950; border-color: #3fb95040; background: #3fb95010; }
+    .badge.yellow { color: #d29922; border-color: #d2992240; background: #d2992210; }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 1.5rem; }
+    .card h2 { font-size: 1rem; font-weight: 600; color: #58a6ff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    td { padding: 0.4rem 0; vertical-align: top; }
+    td:first-child { color: #8b949e; white-space: nowrap; padding-right: 1rem; }
+    td:last-child { font-family: monospace; word-break: break-all; }
+    .cta { background: #1f2937; border: 1px solid #30363d; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; }
+    .cta h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+    .btn { display: inline-block; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem; transition: opacity 0.2s; }
+    .btn-primary { background: #238636; color: #fff; margin-right: 0.75rem; }
+    .btn-secondary { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+    .btn:hover { opacity: 0.85; text-decoration: none; }
+    code { background: #21262d; border: 1px solid #30363d; border-radius: 4px; padding: 0.15rem 0.4rem; font-family: monospace; font-size: 0.85em; }
+    pre { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1rem; overflow-x: auto; font-size: 0.85rem; margin: 0.75rem 0; }
+    .status { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    footer { text-align: center; padding: 2rem 1rem; color: #8b949e; font-size: 0.85rem; border-top: 1px solid #30363d; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="https://raw.githubusercontent.com/klaren1987/UST-chain/main/icon.svg" alt="UST Logo" onerror="this.style.display='none'">
+  <h1>UST Network</h1>
+  <p>Independent EVM blockchain &nbsp;·&nbsp; Chain ID 778889 &nbsp;·&nbsp; Native token UST</p>
+  <div class="badges">
+    <span class="badge green">● Live Mainnet</span>
+    <span class="badge">Chain ID 778889</span>
+    <span class="badge">EVM Compatible</span>
+    <span class="badge">PoW Mining</span>
+    <span class="badge">Fair Launch</span>
+    <span class="badge">Open Source</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:1.25rem">
+    <a class="btn btn-primary" href="https://147-45-143-23.sslip.io" target="_blank" style="text-align:center;text-decoration:none">🔍 Explorer</a>
+    <a class="btn btn-secondary" href="https://147-45-143-23.sslip.io/dex" target="_blank" style="text-align:center;text-decoration:none">⇄ DEX Swap</a>
+    <a class="btn btn-secondary" href="https://147-45-143-23.sslip.io/bridge" target="_blank" style="text-align:center;text-decoration:none">🌉 Bridge</a>
+    <a class="btn btn-secondary" href="https://147-45-143-23.sslip.io/faucet" target="_blank" style="text-align:center;text-decoration:none">💧 Faucet</a>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>⛓️ Network Info</h2>
+      <table>
+        <tr><td>Chain ID</td><td><code>778889</code></td></tr>
+        <tr><td>Symbol</td><td><code>UST</code></td></tr>
+        <tr><td>Decimals</td><td>18</td></tr>
+        <tr><td>Consensus</td><td>Clique PoA</td></tr>
+        <tr><td>Block time</td><td>~5 seconds</td></tr>
+        <tr><td>Mining</td><td>PoW smart contract</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>🌐 Public Endpoints</h2>
+      <table>
+        <tr><td>HTTPS RPC</td><td><a href="https://147-45-143-23.sslip.io/rpc">147-45-143-23.sslip.io/rpc</a></td></tr>
+        <tr><td>WebSocket</td><td><code>wss://147-45-143-23.sslip.io/ws</code></td></tr>
+        <tr><td>Explorer</td><td><a href="https://147-45-143-23.sslip.io">147-45-143-23.sslip.io</a></td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>💎 Token Economics</h2>
+      <table>
+        <tr><td>Pre-mine</td><td>None ✅</td></tr>
+        <tr><td>ICO</td><td>None ✅</td></tr>
+        <tr><td>Team alloc.</td><td>None ✅</td></tr>
+        <tr><td>Distribution</td><td>100% mining</td></tr>
+        <tr><td>Reward</td><td>0.1 UST / proof</td></tr>
+        <tr><td>Halving</td><td>every 50 000 proofs</td></tr>
+        <tr><td>Burn</td><td>2% per reward → 🔥</td></tr>
+        <tr><td>Algorithm</td><td>keccak256</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h2>🦊 Add UST to MetaMask</h2>
+    <a class="btn btn-primary" href="https://chainlist.org/?search=778889" target="_blank">Add via Chainlist</a>
+    <a class="btn btn-secondary" href="https://github.com/klaren1987/UST-chain" target="_blank">GitHub</a>
+    <p style="margin-top:1rem;color:#8b949e;font-size:0.9rem">Or add manually:</p>
+    <table style="margin-top:0.5rem">
+      <tr><td>Network Name</td><td>UST Network</td></tr>
+      <tr><td>RPC URL</td><td><code>https://147-45-143-23.sslip.io/rpc</code></td></tr>
+      <tr><td>Chain ID</td><td><code>778889</code></td></tr>
+      <tr><td>Symbol</td><td><code>UST</code></td></tr>
+      <tr><td>Explorer</td><td><code>https://147-45-143-23.sslip.io</code></td></tr>
+    </table>
+  </div>
+
+  <div class="card" style="margin-bottom:1.25rem">
+    <h2>⛏️ Mining — Earn Free UST</h2>
+    <p style="color:#8b949e;font-size:0.9rem;margin-bottom:0.75rem">
+      UST tokens are distributed exclusively through PoW mining. No wallet? No problem — just start mining.
+      GPU (~590 MH/s on RTX 4060) and CPU both supported.
+    </p>
+    <pre>git clone https://github.com/klaren1987/UST-chain.git
+cd?? UST-chain
+pip install -r requirements.txt
+cp .env.miner.example .env.miner
+# Edit .env.miner — set USST_MINER_KEY to your wallet private key
+python miner/usst_miner.py</pre>
+  </div>
+
+  <div class="card" style="margin-bottom:1.25rem">
+    <h2>📋 Registry Status</h2>
+    <table>
+      <tr><td>ethereum-lists/chains</td><td>✅ <a href="https://github.com/ethereum-lists/chains/pull/8418">Merged #8418</a></td></tr>
+      <tr><td>DefiLlama Chainlist</td><td>✅ <a href="https://github.com/DefiLlama/chainlist/pull/2830">Merged #2830</a></td></tr>
+      <tr><td>wevm/viem</td><td>⏳ <a href="https://github.com/wevm/viem/pull/4721">PR #4721</a> pending</td></tr>
+      <tr><td>chainid.network</td><td>✅ auto via ethereum-lists</td></tr>
+      <tr><td>WalletConnect / Rainbow / wagmi</td><td>⏳ pending viem merge</td></tr>
+    </table>
+  </div>
+
+  <!-- Design philosophy section -->
+<footer>
+  UST Network &nbsp;·&nbsp; Chain ID 778889 &nbsp;·&nbsp; Native token UST &nbsp;·&nbsp;
+  <a href="https://github.com/klaren1987/UST-chain">GitHub</a> &nbsp;·&nbsp;
+  <a href="https://147-45-143-23.sslip.io">Explorer</a> &nbsp;·&nbsp;
+  <a href="https://147-45-143-23.sslip.io/dex">DEX</a> &nbsp;·&nbsp;
+  <a href="https://147-45-143-23.sslip.io/bridge">Bridge</a> &nbsp;·&nbsp;
+  <a href="https://147-45-143-23.sslip.io/faucet">Faucet</a> &nbsp;·&nbsp;
+  <a href="https://github.com/klaren1987/UST-chain/blob/main/docs/whitepaper.md">Whitepaper</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-pip python3-venv curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/bin/python3 /usr/bin/python
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python -c "from solcx import install_solc; install_solc('0.8.20')"
+
+COPY contracts/ contracts/
+COPY miner/ miner/
+COPY scripts/ scripts/
+RUN chmod +x scripts/*.sh scripts/gpu-entrypoint.sh
+
+ENV PYTHONUNBUFFERED=1 \
+    CUDA_HOME=/usr/local/cuda \
+    PATH=/usr/local/cuda/bin:${PATH} \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/nvvm/lib64 \
+    USST_RPC=http://usst-node:8545 \
+    USST_CHAIN_ID=778889 \
+    USST_DEPLOYED_PATH=/data/deployed.json \
+    USST_FUND_ETHER=10000 \
+    USST_GPU=1
+
+ENTRYPOINT ["/bin/sh", "/app/scripts/gpu-entrypoint.sh"]

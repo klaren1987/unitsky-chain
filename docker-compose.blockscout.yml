@@ -1,0 +1,159 @@
+version: '3.9'
+
+# Blockscout explorer for UST Network (Chain 778889)
+# Access via: https://ust.byteboost.ru
+#
+# Start: docker compose -f docker-compose.blockscout.yml up -d
+# Stop:  docker compose -f docker-compose.blockscout.yml down
+
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  blockscout-db:
+    image: postgres:14
+    container_name: blockscout-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: blockscout
+      POSTGRES_USER: blockscout
+      POSTGRES_PASSWORD: blockscout_pass
+    volumes:
+      - blockscout_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blockscout -d blockscout"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - blockscout-net
+
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  blockscout-redis:
+    image: redis:7-alpine
+    container_name: blockscout-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - blockscout-net
+
+  # ── Blockscout Backend (Elixir) ────────────────────────────────────────────
+  blockscout-backend:
+    image: ghcr.io/blockscout/blockscout:latest
+    container_name: blockscout-backend
+    restart: unless-stopped
+    pull_policy: always
+    stop_grace_period: 5m
+    depends_on:
+      blockscout-db:
+        condition: service_healthy
+      blockscout-redis:
+        condition: service_started
+    command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # ── Database ────────────────────────────────────────────────────────────
+      DATABASE_URL: postgresql://blockscout:blockscout_pass@blockscout-db:5432/blockscout
+      ECTO_USE_SSL: "false"
+
+      # ── Chain / RPC ─────────────────────────────────────────────────────────
+      ETHEREUM_JSONRPC_VARIANT: geth
+      ETHEREUM_JSONRPC_HTTP_URL: http://ust-node:8545
+      ETHEREUM_JSONRPC_TRACE_URL: http://ust-node:8545
+      ETHEREUM_JSONRPC_WS_URL: ws://ust-node:8546
+      CHAIN_ID: "778889"
+
+      # ── Network metadata ─────────────────────────────────────────────────────
+      COIN: UST
+      COIN_NAME: UST
+      NETWORK: "UST Network"
+      SUBNETWORK: Mainnet
+      NETWORK_ICON: _network_icon.html
+
+      # ── App URL ──────────────────────────────────────────────────────────────
+      BLOCKSCOUT_HOST: blockscout.byteboost.ru
+      BLOCKSCOUT_PROTOCOL: https
+
+      # ── API / Secret ─────────────────────────────────────────────────────────
+      SECRET_KEY_BASE: "USTSecretKeyBase64CharactersLongEnoughForProduction778889ChainId"
+      API_V2_ENABLED: "true"
+
+      # ── Redis ─────────────────────────────────────────────────────────────────
+      ACCOUNT_REDIS_URL: redis://blockscout-redis:6379
+      CACHE_ADDRESS_WITH_BALANCES_COUNTER_PERIOD: "3600"
+      CACHE_BLOCK_COUNT_PERIOD: "7200"
+
+      # ── Indexer ───────────────────────────────────────────────────────────────
+      INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: "false"
+      # Geth 1.13 uses path state scheme — historical trie nodes are pruned.
+      # Disabling coin balance catchup avoids endless retries for old blocks.
+      INDEXER_DISABLE_COIN_BALANCE_CATCHUP_FETCHER: "true"
+      INDEXER_MEMORY_LIMIT: "1073741824"
+      POOL_SIZE: "10"
+      POOL_SIZE_API: "10"
+
+      # ── PoA / Clique specific ─────────────────────────────────────────────────
+      CHAIN_SPEC_PATH: ""
+      SUPPORTED_CHAINS: ""
+      DISABLE_EXCHANGE_RATES: "true"
+      DISABLE_KNOWN_TOKENS: "true"
+
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - blockscout_logs:/app/logs
+    networks:
+      - blockscout-net
+      - tebot_default
+
+  # ── Blockscout Frontend (Next.js) ──────────────────────────────────────────
+  blockscout-frontend:
+    image: ghcr.io/blockscout/frontend:latest
+    container_name: blockscout-frontend
+    restart: unless-stopped
+    pull_policy: always
+    platform: linux/amd64
+    depends_on:
+      - blockscout-backend
+    environment:
+      # ── API connection ────────────────────────────────────────────────────────
+      NEXT_PUBLIC_API_HOST: blockscout.byteboost.ru
+      NEXT_PUBLIC_API_PROTOCOL: https
+      NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL: wss
+      NEXT_PUBLIC_API_BASE_PATH: /
+
+      # ── App host ──────────────────────────────────────────────────────────────
+      NEXT_PUBLIC_APP_HOST: blockscout.byteboost.ru
+      NEXT_PUBLIC_APP_PROTOCOL: https
+
+      # ── Network metadata ─────────────────────────────────────────────────────
+      NEXT_PUBLIC_NETWORK_NAME: "UST Network"
+      NEXT_PUBLIC_NETWORK_SHORT_NAME: "UST"
+      NEXT_PUBLIC_NETWORK_ID: "778889"
+      NEXT_PUBLIC_NETWORK_CURRENCY_NAME: "UST"
+      NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL: "UST"
+      NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS: "18"
+      NEXT_PUBLIC_IS_TESTNET: "false"
+
+      # ── Features ──────────────────────────────────────────────────────────────
+      NEXT_PUBLIC_HOMEPAGE_CHARTS: "['daily_txs']"
+      NEXT_PUBLIC_NETWORK_LOGO: "https://blockscout.byteboost.ru/icon.svg"
+      NEXT_PUBLIC_NETWORK_ICON: "https://blockscout.byteboost.ru/icon.svg"
+
+      # ── API spec ──────────────────────────────────────────────────────────────
+      NEXT_PUBLIC_API_SPEC_URL: https://raw.githubusercontent.com/blockscout/blockscout-api-v2-swagger/main/swagger.yaml
+
+    ports:
+      - "127.0.0.1:3001:3000"
+    networks:
+      - blockscout-net
+
+volumes:
+  blockscout_db:
+  blockscout_logs:
+
+networks:
+  blockscout-net:
+    driver: bridge
+  tebot_default:
+    external: true

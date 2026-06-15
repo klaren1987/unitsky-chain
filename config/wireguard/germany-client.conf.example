@@ -1,0 +1,20 @@
+# WireGuard full-tunnel — routes all internet traffic through an exit node.
+# Use TOGETHER with the primary VPS tunnel (see windows-client.conf.example).
+#
+# === IMPORTANT in the WireGuard app when editing this tunnel ===
+# UNCHECK: "Block traffic going around the tunnel (kill-switch)"
+# If kill-switch is ON, the primary VPS tunnel and local network will stop working.
+#
+# Order: primary tunnel ON -> run wireguard-dual-routes.ps1 -> Connect this tunnel.
+
+[Interface]
+PrivateKey = CLIENT_PRIVATE_KEY
+Address = 10.7.0.3/32
+DNS = 8.8.8.8
+MTU = 1420
+
+[Peer]
+PublicKey = SERVER_PUBLIC_KEY
+Endpoint = SERVER_IP:51820
+AllowedIPs = 0.0.0.0/0, ::/0
+PersistentKeepalive = 20

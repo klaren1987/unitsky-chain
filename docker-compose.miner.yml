@@ -1,0 +1,37 @@
+# Miner-only stack for worker PCs.
+# Usage: cp .env.miner.example .env && docker compose -f docker-compose.miner.yml up --build -d
+
+services:
+  miner:
+    build:
+      context: .
+      dockerfile: ${USST_MINER_DOCKERFILE:-Dockerfile.gpu}
+    container_name: ${MINER_CONTAINER_NAME:-ust-miner}
+    environment:
+      USST_RPC: ${USST_RPC:?Set USST_RPC to your server URL, e.g. http://192.168.1.100:8545}
+      USST_CHAIN_ID: ${USST_CHAIN_ID:-778889}
+      USST_MINER_KEY: ${USST_MINER_KEY:?Set a unique USST_MINER_KEY for this machine}
+      USST_CONTRACT_ADDRESS: ${USST_CONTRACT_ADDRESS:?Set USST_CONTRACT_ADDRESS from the server deploy}
+      USST_GPU: ${USST_GPU:-1}
+      USST_GPU_REQUIRED: ${USST_GPU_REQUIRED:-0}
+      USST_GPU_BATCH_SIZE: ${USST_GPU_BATCH_SIZE:-}
+      USST_GPU_STREAMS: ${USST_GPU_STREAMS:-2}
+      USST_GPU_THREADS: ${USST_GPU_THREADS:-256}
+      USST_GPU_UI_INTERVAL: ${USST_GPU_UI_INTERVAL:-0.25}
+      USST_GPU_BLOCK_CHECK_BATCHES: ${USST_GPU_BLOCK_CHECK_BATCHES:-16}
+      USST_GPU_BATCH_SLEEP: ${USST_GPU_BATCH_SLEEP:-0}
+      USST_CPU_BATCH_SIZE: ${USST_CPU_BATCH_SIZE:-}
+    gpus: all
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - miner-net
+      - tebot_default
+
+networks:
+  miner-net:
+    driver: bridge
+  tebot_default:
+    external: true
+    name: ${TEBOT_NETWORK:-tebot_default}

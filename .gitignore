@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Environment — never commit real keys
+.env
+.env.miner
+.env.windows-node
+!.env.example
+!.env.miner.example
+!.env.windows-node.example
+
+# Deployment artifacts (generated at runtime)
+deployed.json
+
+# Local helper pages — may contain real private keys
+scripts/metamask-setup.html
+
+# Temporary debug / test scripts (not part of the project)
+scripts/_*.py
+scripts/_*.sh
+
+# Solc compiler cache
+~/.solcx/
+
+# Node / chain data
+chain/password.txt
+chain/keystore/
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

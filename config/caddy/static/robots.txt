@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://147-45-143-23.sslip.io/

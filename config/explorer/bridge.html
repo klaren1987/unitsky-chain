@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="USDT Bridge — transfer real Tether USDT from Ethereum mainnet to Chain 778889 and back.">
+  <meta property="og:title" content="UST Bridge — Real USDT ↔ Chain 778889">
+  <meta property="og:description" content="Transfer real Tether USDT from Ethereum to Chain 778889 via the centralized bridge.">
+  <meta property="og:image" content="https://blockscout.byteboost.ru/icon.svg">
+  <meta property="og:url" content="https://rpc.byteboost.ru/bridge">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://rpc.byteboost.ru/bridge">
+  <title>UST Bridge — Real USDT ↔ Chain 778889</title>
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --border: #30363d;
+      --accent: #d4a017; --accent2: #f0c040;
+      --text: #e6edf3; --muted: #8b949e; --green: #3fb950; --red: #f85149;
+      --blue: #58a6ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+    header {
+      border-bottom: 1px solid var(--border); padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-weight: 700; font-size: 1.1rem; color: var(--accent2); }
+    .logo span { color: var(--muted); font-weight: 400; font-size: 0.85rem; margin-left: 8px; }
+    nav a { color: var(--muted); text-decoration: none; margin-left: 20px; font-size: 0.9rem; }
+    nav a:hover, nav a.active { color: var(--text); }
+    main { max-width: 560px; margin: 48px auto; padding: 0 16px; }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 0.92rem; margin-bottom: 28px; line-height: 1.6; }
+    .tabs { display: flex; gap: 0; margin-bottom: 0; }
+    .tab {
+      flex: 1; padding: 11px; text-align: center; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border); color: var(--muted);
+      background: var(--bg); transition: all 0.15s;
+    }
+    .tab:first-child { border-radius: 10px 0 0 0; }
+    .tab:last-child  { border-radius: 0 10px 0 0; border-left: none; }
+    .tab.active { background: var(--card); color: var(--text); border-bottom-color: var(--card); }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-top: none; border-radius: 0 0 16px 16px; padding: 28px;
+    }
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; margin-top: 18px; }
+    label:first-child { margin-top: 0; }
+    input[type="text"], input[type="number"] {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; color: var(--text);
+      font-size: 0.92rem; outline: none; transition: border-color 0.15s;
+    }
+    input:focus { border-color: var(--accent); }
+    .input-hint { font-size: 0.78rem; color: var(--muted); margin-top: 5px; }
+    button.primary {
+      margin-top: 20px; width: 100%; padding: 14px;
+      background: var(--accent); color: #000; border: none;
+      border-radius: 10px; font-weight: 700; font-size: 1rem;
+      cursor: pointer; transition: background 0.15s;
+    }
+    button.primary:hover:not(:disabled) { background: var(--accent2); }
+    button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    #status { margin-top: 16px; font-size: 0.88rem; line-height: 1.7; min-height: 20px; }
+    .ok   { color: var(--green); }
+    .err  { color: var(--red); }
+    .info { color: var(--muted); }
+    .info-box {
+      margin-top: 24px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px; font-size: 0.83rem; color: var(--muted); line-height: 1.8;
+    }
+    .info-box strong { color: var(--text); }
+    .reserve-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      margin-bottom: 24px;
+    }
+    .reserve-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 16px; font-size: 0.85rem;
+    }
+    .reserve-label { color: var(--muted); font-size: 0.78rem; }
+    .reserve-value { font-weight: 700; color: var(--green); font-size: 0.95rem; }
+    .reserve-value.empty { color: var(--red); }
+    @media (max-width: 480px) { .reserve-grid { grid-template-columns: 1fr; } }
+    .step {
+      display: flex; gap: 12px; align-items: flex-start;
+      margin-bottom: 12px; font-size: 0.85rem; color: var(--muted); line-height: 1.5;
+    }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%; background: var(--accent);
+      color: #000; font-weight: 700; font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .mono { font-family: monospace; font-size: 0.82rem; }
+    .addr-copy { cursor: pointer; color: var(--blue); text-decoration: underline; }
+    footer {
+      margin-top: 48px; text-align: center; font-size: 0.8rem; color: var(--muted); padding-bottom: 32px;
+    }
+    footer a { color: var(--muted); text-decoration: none; margin: 0 8px; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">UST Explorer <span>Chain 778889</span></div>
+  <nav>
+    <a href="/">Explorer</a>
+    <a href="/dex">DEX</a>
+    <a href="/faucet">Faucet</a>
+    <a href="/bridge" class="active">Bridge</a>
+  </nav>
+</header>
+
+<main>
+  <h1>🌉 USDT Bridge</h1>
+  <p class="subtitle">
+    Transfer real Tether USDT from Ethereum mainnet to Chain 778889, or withdraw back.
+    The bridge is operated by the UST team — deposits are processed automatically by the relayer within minutes.
+  </p>
+
+  <!-- Treasury reserve indicators -->
+  <div class="reserve-grid">
+    <div class="reserve-bar">
+      <span class="reserve-label">🏦 USDT reserve<br><small style="font-size:0.72rem">available for withdrawal</small></span>
+      <span class="reserve-value" id="reserveVal">Loading…</span>
+    </div>
+    <div class="reserve-bar">
+      <span class="reserve-label">⛽ ETH gas reserve<br><small style="font-size:0.72rem">for relayer transactions</small></span>
+      <span class="reserve-value" id="gasVal">Loading…</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" id="tabDeposit" onclick="showTab('deposit')">Deposit → Chain 778889</div>
+    <div class="tab" id="tabWithdraw" onclick="showTab('withdraw')">Withdraw → Ethereum</div>
+  </div>
+
+  <div class="card">
+
+    <!-- DEPOSIT TAB -->
+    <div id="panelDeposit">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>Send real USDT (ERC-20) on <strong>Ethereum mainnet</strong> to the bridge treasury:<br>
+          <span class="mono" id="treasuryAddr">Loading…</span>
+          <span class="addr-copy" onclick="copyAddr()" title="Copy">&nbsp;📋 copy</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>Fill in the form below with your <strong>Chain 778889 address</strong> (where to receive BridgedUSDT) and the <strong>Ethereum tx hash</strong> of your deposit.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>The relayer will mint BridgedUSDT on Chain 778889 automatically within a few minutes (or up to 24 h).</div>
+      </div>
+
+      <label>Your Ethereum tx hash (after sending USDT)</label>
+      <input type="text" id="depositTxHash" placeholder="0x…" maxlength="66" spellcheck="false" />
+
+      <label>Your Chain 778889 wallet address (to receive)</label>
+      <input type="text" id="depositRecipient" placeholder="0x…" maxlength="42" spellcheck="false" />
+      <div class="input-hint">This address will receive BridgedUSDT on Chain 778889.</div>
+
+      <button class="primary" onclick="submitDeposit()">Submit Deposit Request</button>
+      <div id="status"></div>
+
+      <div class="info-box">
+        <strong>Minimum:</strong> 1 USDT &nbsp;·&nbsp;
+        <strong>Fee:</strong> 0% (relayer pays gas) &nbsp;·&nbsp;
+        <strong>Time:</strong> ~5 minutes (automatic) or up to 24 h<br>
+        Real USDT contract on Ethereum: <span class="mono">0xdAC17F958D2ee523a2206206994597C13D831ec7</span>
+      </div>
+    </div>
+
+    <!-- WITHDRAW TAB -->
+    <div id="panelWithdraw" style="display:none">
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:20px">
+        Burn your BridgedUSDT on Chain 778889 and receive real USDT on Ethereum.
+        Connect MetaMask to Chain 778889 to proceed.
+      </p>
+
+      <label>Amount (USDT)</label>
+      <input type="number" id="withdrawAmt" placeholder="10.00" min="1" step="0.000001" />
+
+      <label>Your Ethereum address (to receive real USDT)</label>
+      <input type="text" id="withdrawEthAddr" placeholder="0x…" maxlength="42" spellcheck="false" />
+      <div class="input-hint">Make sure this is a valid Ethereum mainnet address you control.</div>
+
+      <button class="primary" onclick="submitWithdraw()">Burn &amp; Withdraw</button>
+      <div id="statusW"></div>
+
+      <div class="info-box">
+        <strong>Minimum:</strong> 1 USDT &nbsp;·&nbsp;
+        <strong>Fee:</strong> small gas on Chain 778889 &nbsp;·&nbsp;
+        <strong>Time:</strong> up to 24 h<br>
+        You need a tiny amount of UST gas to send the burn transaction.
+        Use the <a href="/faucet">Faucet</a> if your balance is 0.
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <a href="/">Explorer</a>
+  <a href="/dex">DEX Swap</a>
+  <a href="/faucet">Faucet</a>
+  <a href="/rpc">RPC</a>
+  <a href="https://github.com/klaren1987/UST-chain" target="_blank" rel="noopener">GitHub</a>
+</footer>
+
+<script>
+const RPC            = location.origin + "/rpc";
+const BRIDGE_API     = location.origin + "/bridge";
+const BRIDGED_USDT   = "0x84FF17c84a7EeaCC2008C8327612863D24691b45";
+const ETHERS_CDN     = "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js";
+
+function showTab(tab) {
+  document.getElementById("panelDeposit").style.display  = tab === "deposit"  ? "" : "none";
+  document.getElementById("panelWithdraw").style.display = tab === "withdraw" ? "" : "none";
+  document.getElementById("tabDeposit").classList.toggle("active",  tab === "deposit");
+  document.getElementById("tabWithdraw").classList.toggle("active", tab === "withdraw");
+}
+
+function setStatus(id, msg, cls) {
+  document.getElementById(id).innerHTML = `<span class="${cls}">${msg}</span>`;
+}
+
+function copyAddr() {
+  const addr = document.getElementById("treasuryAddr").textContent.trim();
+  if (addr && addr !== "Loading…") {
+    navigator.clipboard.writeText(addr).then(() => {
+      document.querySelector(".addr-copy").textContent = " ✓ copied";
+      setTimeout(() => document.querySelector(".addr-copy").textContent = " 📋 copy", 2000);
+    });
+  }
+}
+
+// Load bridge treasury address + reserve from status endpoint
+let TREASURY_ADDR = "";
+let REAL_USDT_ETH = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+
+fetch(BRIDGE_API + "/status")
+  .then(r => r.json())
+  .then(d => {
+    TREASURY_ADDR = d.treasury || "";
+    REAL_USDT_ETH = d.realUSDT || REAL_USDT_ETH;
+    document.getElementById("treasuryAddr").textContent = TREASURY_ADDR || "See GitHub";
+    if (TREASURY_ADDR) loadReserve(TREASURY_ADDR);
+  })
+  .catch(() => {
+    document.getElementById("treasuryAddr").textContent = "See GitHub README";
+    document.getElementById("reserveVal").textContent = "unavailable";
+  });
+
+const ETH_RPC_URL = "https://eth-mainnet.public.blastapi.io";
+
+async function ethRpc(method, params) {
+  const resp = await fetch(ETH_RPC_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", method, params, id: 1 })
+  });
+  return (await resp.json()).result;
+}
+
+async function loadReserve(treasury) {
+  // USDT balance
+  try {
+    const sel = "0x70a08231" + treasury.slice(2).toLowerCase().padStart(64, "0");
+    const result = await ethRpc("eth_call", [{ to: REAL_USDT_ETH, data: sel }, "latest"]);
+    const balRaw = parseInt(result || "0x0", 16);
+    const el = document.getElementById("reserveVal");
+    el.textContent = (balRaw / 1_000_000).toFixed(2) + " USDT";
+    if (balRaw === 0) {
+      el.classList.add("empty");
+      el.title = "No USDT in treasury — withdrawals may be delayed";
+    }
+  } catch {
+    document.getElementById("reserveVal").textContent = "unavailable";
+  }
+
+  // ETH gas balance
+  try {
+    const result = await ethRpc("eth_getBalance", [treasury, "latest"]);
+    const balEth = parseInt(result || "0x0", 16) / 1e18;
+    const el = document.getElementById("gasVal");
+    el.textContent = balEth.toFixed(4) + " ETH";
+    if (balEth < 0.005) {
+      el.classList.add("empty");
+      el.title = "Low ETH — withdrawals may be delayed";
+    }
+  } catch {
+    document.getElementById("gasVal").textContent = "unavailable";
+  }
+}
+
+async function submitDeposit() {
+  const txHash    = document.getElementById("depositTxHash").value.trim();
+  const recipient = document.getElementById("depositRecipient").value.trim();
+  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
+    return setStatus("status", "Invalid tx hash (must be 0x… 66 chars)", "err");
+  }
+  if (!/^0x[0-9a-fA-F]{40}$/.test(recipient)) {
+    return setStatus("status", "Invalid Chain 778889 address", "err");
+  }
+  setStatus("status", "Submitting…", "info");
+  try {
+    const res = await fetch(BRIDGE_API + "/deposit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ txHash, recipient }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setStatus("status", "✓ Request submitted! The relayer will process it shortly.", "ok");
+    } else {
+      setStatus("status", data.error || "Error submitting request", "err");
+    }
+  } catch (e) {
+    setStatus("status", "Network error: " + e.message, "err");
+  }
+}
+
+async function submitWithdraw() {
+  const amtStr  = document.getElementById("withdrawAmt").value.trim();
+  const ethAddr = document.getElementById("withdrawEthAddr").value.trim();
+  const amt     = parseFloat(amtStr);
+  if (!amt || amt < 1) return setStatus("statusW", "Minimum withdrawal: 1 USDT", "err");
+  if (!/^0x[0-9a-fA-F]{40}$/.test(ethAddr)) return setStatus("statusW", "Invalid Ethereum address", "err");
+  if (!window.ethereum) return setStatus("statusW", "MetaMask not found — install it first", "err");
+
+  setStatus("statusW", "Connecting MetaMask…", "info");
+  try {
+    const script  = document.createElement("script"); script.src = ETHERS_CDN;
+    await new Promise((res, rej) => { script.onload = res; script.onerror = rej; document.head.appendChild(script); });
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    const signer  = await provider.getSigner();
+
+    // Check chain
+    const network = await provider.getNetwork();
+    if (Number(network.chainId) !== 778889) {
+      return setStatus("statusW", "Switch MetaMask to Chain 778889 first", "err");
+    }
+
+    setStatus("statusW", "Sending burn transaction…", "info");
+    const abi = ["function bridgeBurn(uint256 amount, string calldata ethAddress) external"];
+    const contract = new ethers.Contract(BRIDGED_USDT, abi, signer);
+    const amountUnits = BigInt(Math.round(amt * 1_000_000));
+    const tx = await contract.bridgeBurn(amountUnits, ethAddr);
+    setStatus("statusW",
+      `✓ Burn tx sent: <a href="/#/tx/${tx.hash}" target="_blank">${tx.hash.slice(0,14)}…</a><br>` +
+      `<span class="info" style="font-size:0.8rem">Relayer will send ${amt} USDT to ${ethAddr} on Ethereum within 24 h.</span>`,
+      "ok"
+    );
+  } catch (e) {
+    setStatus("statusW", "Error: " + (e.reason || e.message), "err");
+  }
+}
+</script>
+</body>
+</html>

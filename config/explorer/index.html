@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="UST Network block explorer — Chain ID 778889, native token UST. EVM-compatible network with PoW mining smart contract.">
+  <meta name="keywords" content="UST,?? UST, blockchain, explorer, Chain 778889, EVM, mining, crypto">
+  <meta name="application-name" content="UST Explorer">
+  <meta property="og:title" content="UST Explorer — UST Chain 778889">
+  <meta property="og:description" content="Block explorer for UST Network — EVM network, native token UST, Chain ID 778889.">
+  <meta property="og:image" content="https://147-45-143-23.sslip.io/icon.svg">
+  <meta property="og:url" content="https://147-45-143-23.sslip.io">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="UST Explorer — UST Chain 778889">
+  <meta name="twitter:description" content="Block explorer for UST Network EVM network.">
+  <meta name="twitter:image" content="https://147-45-143-23.sslip.io/icon.svg">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://147-45-143-23.sslip.io">
+  <title>UST Explorer — Chain 778889 | UST</title>
+  <script>
+    /* Unregister any cached Otterscan service worker immediately */
+    (function () {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (rs) {
+          rs.forEach(function (r) { r.unregister(); });
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function (names) {
+          names.forEach(function (n) { caches.delete(n); });
+        });
+      }
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --surface: #151c27;
+      --surface2: #1c2636;
+      --border: #2a3548;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --green: #22c55e;
+      --red: #f87171;
+      --mint: #00d4aa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand:hover { text-decoration: none; }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; }
+    .brand-text { font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
+    .brand-text small { display: block; color: var(--muted); font-weight: 400; font-size: 0.72rem; }
+    .search {
+      flex: 1;
+      min-width: 200px;
+      max-width: 480px;
+      display: flex;
+      gap: 0.45rem;
+    }
+    .search input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.88rem;
+    }
+    .search input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    .search button, .btn {
+      padding: 0.5rem 0.9rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+    .search button:hover, .btn:hover { background: var(--accent-hover); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover { background: var(--surface2); color: var(--text); text-decoration: none; }
+    .btn-mint { background: #0d3d32; border: 1px solid var(--mint); color: var(--mint); }
+    .btn-mint:hover { background: #115044; color: var(--mint); text-decoration: none; }
+    .header-actions { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; }
+    .live {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .live.ok { color: var(--green); }
+    .live.err { color: var(--red); }
+    .live::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .live.ok::before { animation: pulse 2s infinite; }
+    @keyframes pulse { 50% { opacity: 0.35; } }
+    main { max-width: 1100px; margin: 0 auto; padding: 1.25rem; min-height: 60vh; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+    }
+    .stat label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stat value, .stat .val {
+      display: block;
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-top: 0.2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stat .val.mono { font-family: ui-monospace, monospace; font-size: 0.78rem; white-space: nowrap; }
+    .stat.highlight { border-color: #0d3d32; background: linear-gradient(135deg, #151c27, #0f1f1a); }
+    .stat.highlight .val { color: var(--mint); }
+    h2.section {
+      font-size: 0.85rem;
+      margin: 1.25rem 0 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td { padding: 0.6rem 0.85rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+    .mono { font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.82rem; }
+    .hash {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+      vertical-align: bottom;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.15rem;
+      margin-bottom: 1.25rem;
+    }
+    .panel h1 { font-size: 1.05rem; margin-bottom: 0.85rem; }
+    .row { display: grid; grid-template-columns: minmax(110px, 140px) 1fr; gap: 0.35rem 1rem; margin-bottom: 0.45rem; font-size: 0.88rem; align-items: start; }
+    .row dt { color: var(--muted); padding-top: 0.1rem; }
+    .row dd { word-break: break-all; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+    .copy {
+      padding: 0.15rem 0.45rem;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .copy:hover { color: var(--text); border-color: var(--accent); }
+    .copy.ok { color: var(--green); border-color: var(--green); }
+    .err {
+      color: var(--red);
+      padding: 1rem;
+      background: #450a0a33;
+      border: 1px solid #7f1d1d55;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    .nav-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 3rem;
+      color: var(--muted);
+    }
+    .spinner {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .about { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .about h2 { font-size: 1rem; margin-bottom: 0.65rem; color: var(--text); text-transform: none; letter-spacing: 0; }
+    .about p { color: var(--muted); font-size: 0.88rem; margin-bottom: 0.5rem; }
+    .about .links { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.85rem; font-size: 0.85rem; }
+    .tag {
+      display: inline-block;
+      background: #1e3a5f;
+      color: #93c5fd;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      margin: 2px;
+    }
+    .badge-ok { color: var(--green); }
+    .badge-fail { color: var(--red); }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      padding: 1.75rem 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    @media (max-width: 640px) {
+      header { padding: 0.75rem; }
+      .header-actions { width: 100%; justify-content: space-between; margin-left: 0; }
+      .search { max-width: none; order: 3; width: 100%; }
+      .row { grid-template-columns: 1fr; }
+      .row dt { margin-bottom: -0.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="#" id="homeLink">
+      <img src="/icon.svg" alt="UST" width="32" height="32">
+      <span class="brand-text">UST Explorer<small>Chain 778889 · UST</small></span>
+    </a>
+    <form class="search" id="searchForm">
+      <input id="searchInput" placeholder="Block / tx hash / address…" autocomplete="off" spellcheck="false">
+      <button type="submit">Search</button>
+    </form>
+    <div class="header-actions">
+      <div class="live ok" id="live">live</div>
+      <a class="btn btn-mint" href="/dex" style="font-weight:700;">⇄ Swap</a>
+      <a class="btn btn-outline" href="/bridge">🌉 Bridge</a>
+      <a class="btn btn-outline" href="#/about">About</a>
+    </div>
+  </header>
+  <main id="app"><div class="loading"><div class="spinner"></div>Loading…</div></main>
+  <footer>
+    UST Network &nbsp;·&nbsp; Chain ID 778889 &nbsp;·&nbsp; Native token UST &nbsp;·&nbsp;
+    <a href="https://klaren1987.github.io/UST-chain/" target="_blank" rel="noopener">Website</a> &nbsp;·&nbsp;
+    <a href="https://github.com/klaren1987/UST-chain" target="_blank" rel="noopener">GitHub</a> &nbsp;·&nbsp;
+    <a href="/rpc" target="_blank">RPC</a> &nbsp;·&nbsp;
+    <a href="/faucet">💧 Faucet</a> &nbsp;·&nbsp;
+    <a href="/bridge">🌉 Bridge</a> &nbsp;·&nbsp;
+    <a href="https://www.geckoterminal.com" target="_blank" rel="noopener">GeckoTerminal</a>
+  </footer>
+  <script>
+    const RPC = location.origin + "/rpc";
+    const MINE_CONTRACT = "0x71e63fb263613e0ca086Ef4A995eB5A2D148Ecb0"; // v3: halving + burn + timelock
+    const DEX_PAIR = "0x0Af0858e199C85E1f56f11bAb229084b6CA09338"; // FixedUSDT18/WUST pair (token0=USDT, token1=WUST)
+    const SELECTORS = {
+      poolBalance: "0x96365d44",
+      difficulty: "0x19cae462",
+      reward: "0x228cb733",   // reward() — halving-aware gross reward
+      totalMined: "0x5556db65",
+      currentEra: "0x973628f6",
+      proofsTillHalving: "0xf041c843",
+      totalBurned: "0xd89135cd",  // totalBurned — UST sent to dead address
+      getReserves: "0x0902f1ac",
+    };
+    const METAMASK_CHAIN = {
+      chainId: "0xBE289",
+      chainName: "UST Network",
+      nativeCurrency: { name: "UST", symbol: "UST", decimals: 18 },
+      rpcUrls: ["https://147-45-143-23.sslip.io/rpc"],
+      blockExplorerUrls: ["https://147-45-143-23.sslip.io"],
+    };
+    const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
+
+    let latest = 0;
+    let refreshTimer = null;
+
+    async function rpc(method, params = [], _attempt = 0) {
+      const RETRIES = 3;
+      const DELAYS = [600, 1500, 3000];
+      try {
+        const res = await fetch(RPC, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+          signal: AbortSignal.timeout(12000),
+        });
+        // Transient gateway errors — silently retry
+        if ((res.status === 502 || res.status === 503 || res.status === 504) && _attempt < RETRIES) {
+          await new Promise(r => setTimeout(r, DELAYS[_attempt]));
+          return rpc(method, params, _attempt + 1);
+        }
+        if (!res.ok) throw new Error("RPC HTTP " + res.status);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message || "RPC error");
+        return data.result;
+      } catch (e) {
+        // Network timeout / fetch abort — retry silently
+        if (_attempt < RETRIES && (e.name === "AbortError" || e.name === "TimeoutError" || e.message === "Failed to fetch")) {
+          await new Promise(r => setTimeout(r, DELAYS[_attempt]));
+          return rpc(method, params, _attempt + 1);
+        }
+        throw e;
+      }
+    }
+
+    async function callContract(selector) {
+      const result = await rpc("eth_call", [{ to: MINE_CONTRACT, data: selector }, "latest"]);
+      return BigInt(result || "0x0");
+    }
+
+    function hex(n) { return Number.parseInt(n, 16); }
+    function fmtNum(n) { return Number(n).toLocaleString("en-US"); }
+    function fmtId(n) { return String(n); }
+    function isZeroAddr(a) {
+      return !a || a.toLowerCase() === ZERO_ADDR;
+    }
+    /** Geth Clique leaves miner=0x0; use first tx sender (PoW mine) or label validator. */
+    function blockProducer(b) {
+      if (!isZeroAddr(b.miner)) return { addr: b.miner, label: "Miner" };
+      const txs = b.transactions || [];
+      const first = txs[0];
+      if (first && typeof first === "object" && first.from) {
+        return { addr: first.from, label: "Producer" };
+      }
+      return { addr: null, label: "Validator" };
+    }
+    function renderProducer(b) {
+      const p = blockProducer(b);
+      if (p.addr) return linkAddr(p.addr);
+      return `<span style="color:var(--muted)">Clique validator</span>`;
+    }
+    function short(s, a = 8, b = 6) {
+      if (!s || s.length < a + b + 2) return s;
+      return s.slice(0, a + 2) + "…" + s.slice(-b);
+    }
+    function fmtTime(ts) {
+      if (!ts) return "—";
+      return new Date(ts * 1000).toLocaleString("en-US");
+    }
+    function fmtWei(hexWei) {
+      const v = BigInt(hexWei || "0x0");
+      const whole = v / 10n ** 18n;
+      const frac = v % 10n ** 18n;
+      const fracStr = frac.toString().padStart(18, "0").slice(0, 4).replace(/0+$/, "");
+      const wholeStr = Number(whole).toLocaleString("en-US");
+      return fracStr ? `${wholeStr}.${fracStr}` : wholeStr;
+    }
+    function fmtGwei(hexWei) {
+      const v = BigInt(hexWei || "0x0");
+      const gwei = Number(v) / 1e9;
+      return gwei >= 1 ? gwei.toFixed(2) + " Gwei" : Number(v).toLocaleString("en-US") + " wei";
+    }
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    }
+    function copyBtn(text) {
+      const id = "c" + Math.random().toString(36).slice(2, 8);
+      return `<button type="button" class="copy" data-copy="${esc(text)}" id="${id}">copy</button>`;
+    }
+    function bindCopyButtons(root = document) {
+      root.querySelectorAll("[data-copy]").forEach(btn => {
+        btn.onclick = async () => {
+          try {
+            await navigator.clipboard.writeText(btn.dataset.copy);
+            btn.textContent = "✓";
+            btn.classList.add("ok");
+            setTimeout(() => { btn.textContent = "copy"; btn.classList.remove("ok"); }, 1500);
+          } catch (_) {}
+        };
+      });
+    }
+    function linkTx(h) { return `<a class="mono hash" href="#/tx/${h}" title="${esc(h)}">${short(h)}</a>`; }
+    function linkBlock(n) { return `<a href="#/block/${n}">${fmtNum(n)}</a>`; }
+    function linkAddr(a) { return `<a class="mono hash" href="#/address/${a}" title="${esc(a)}">${short(a)}</a>`; }
+    function setLoading(msg = "Loading…") {
+      document.getElementById("app").innerHTML = `<div class="loading"><div class="spinner"></div>${esc(msg)}</div>`;
+    }
+    function showError(msg, retryFn) {
+      const retry = retryFn ? `<p style="margin-top:0.75rem"><button class="btn btn-outline" id="retryBtn">Retry</button></p>` : "";
+      document.getElementById("app").innerHTML = `<div class="err">${esc(msg)}</div>${retry}`;
+      if (retryFn) document.getElementById("retryBtn").onclick = retryFn;
+    }
+    function setLive(ok) {
+      const el = document.getElementById("live");
+      el.textContent = ok ? "live" : "offline";
+      el.className = "live " + (ok ? "ok" : "err");
+    }
+
+    async function pingRpc() {
+      try {
+        await rpc("eth_blockNumber");
+        setLive(true);
+        return true;
+      } catch {
+        setLive(false);
+        return false;
+      }
+    }
+
+    async function loadMiningStats() {
+      try {
+        const [pool, difficulty, reward, totalMined, era, tillHalving, burned] = await Promise.all([
+          callContract(SELECTORS.poolBalance),
+          callContract(SELECTORS.difficulty),
+          callContract(SELECTORS.reward),
+          callContract(SELECTORS.totalMined),
+          callContract(SELECTORS.currentEra),
+          callContract(SELECTORS.proofsTillHalving),
+          callContract(SELECTORS.totalBurned),
+        ]);
+        return {
+          pool: fmtWei("0x" + pool.toString(16)),
+          difficulty: fmtNum(difficulty),
+          reward: fmtWei("0x" + reward.toString(16)),
+          totalMined: fmtNum(totalMined),
+          era: Number(era),
+          tillHalving: fmtNum(tillHalving),
+          burned: fmtWei("0x" + burned.toString(16)),
+        };
+      } catch {
+        return null;
+      }
+    }
+
+    async function loadUstPrice() {
+      try {
+        const result = await rpc("eth_call", [{ to: DEX_PAIR, data: SELECTORS.getReserves }, "latest"]);
+        if (!result || result === "0x") return null;
+        // getReserves returns (uint112 r0, uint112 r1, uint32 ts) packed in 3×32-byte slots
+        const hex32 = (s, slot) => BigInt("0x" + s.slice(2 + slot * 64, 2 + (slot + 1) * 64));
+        const r0 = hex32(result, 0); // FixedUSDT18 (18 dec) — token0 (0x3de... < 0x637...)
+        const r1 = hex32(result, 1); // WUST (18 dec) — token1
+        if (r1 === 0n) return null;
+        // price of 1 WUST = r0 (USDT) / r1 (WUST), both 18 dec → cancel out
+        const priceNum = Number(r0) / Number(r1);
+        return priceNum.toFixed(6);
+      } catch {
+        return null;
+      }
+    }
+
+    let _homeFailCount = 0;
+
+    async function loadSigners() {
+      try {
+        const signers = await rpc("clique_getSigners", ["latest"]);
+        return Array.isArray(signers) ? signers : [];
+      } catch(e) { return []; }
+    }
+
+    async function home() {
+      if (_homeFailCount === 0) setLoading();
+      try {
+        const [chainIdHex, blockHex, mining, ustPrice, signers] = await Promise.all([
+          rpc("eth_chainId"),
+          rpc("eth_blockNumber"),
+          loadMiningStats(),
+          loadUstPrice(),
+          loadSigners(),
+          pingRpc(),
+        ]);
+        _homeFailCount = 0;
+        const chainId = hex(chainIdHex);
+        latest = hex(blockHex);
+        const priceHtml = ustPrice
+          ? `<div class="stat highlight"><label>UST Price</label><span class="val">$${ustPrice} <a href="/dex" style="font-size:0.7em;opacity:0.7">DEX →</a></span></div>`
+          : "";
+        const miningHtml = mining ? `
+          <div class="stat highlight"><label>Pool</label><span class="val">${mining.pool} UST</span></div>
+          <div class="stat highlight"><label>Mined total</label><span class="val">${mining.totalMined}</span></div>
+          <div class="stat"><label>Difficulty</label><span class="val">${mining.difficulty}</span></div>
+          <div class="stat"><label>Reward (gross)</label><span class="val">${mining.reward} UST</span></div>
+          <div class="stat"><label>Halving era</label><span class="val">${mining.era}</span></div>
+          <div class="stat"><label>Till halving</label><span class="val">${mining.tillHalving} proofs</span></div>
+          <div class="stat"><label>Total burned</label><span class="val">${mining.burned} UST 🔥</span></div>` : "";
+        document.getElementById("app").innerHTML = `
+          <div style="background:linear-gradient(135deg,#0f1f1a,#0b1a2e);border:1px solid #2a3548;border-radius:10px;padding:0.9rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <span style="font-size:1.2rem">🌍</span>
+            <div>
+              <div style="font-weight:700;font-size:0.9rem;color:#e8edf4;">Open network — for everyone</div>
+              <div style="font-size:0.78rem;color:#8b9cb3;">No premine · No ICO · Free faucet · Halving + burn · <a href="#/about" style="color:#00d4aa;">About →</a></div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat"><label>Chain ID</label><span class="val">${fmtId(chainId)}</span></div>
+            <div class="stat"><label>Latest Block</label><span class="val">${fmtNum(latest)}</span></div>
+            <div class="stat"><label>Symbol</label><span class="val">UST</span></div>
+            <div class="stat"><label>Consensus</label><span class="val">Clique PoA</span></div>
+            <div class="stat"><label>Validators</label><span class="val" style="font-size:0.78em;word-break:break-all">${signers.length} signer${signers.length!==1?'s':''}: ${signers.map(s=>`<a href="#/address/${s}" style="color:#00d4aa;font-family:monospace">${s.slice(0,6)}…${s.slice(-4)}</a>`).join(', ') || 'loading…'}</span></div>
+            ${priceHtml}
+            ${miningHtml}
+          </div>
+          <h2 class="section">Latest Blocks</h2>
+          <table><thead><tr><th>Block</th><th>Hash</th><th>Tx</th><th>Producer</th><th>Time</th></tr></thead><tbody id="blocks"><tr><td colspan="5"><div class="loading" style="padding:1rem"><div class="spinner"></div></div></td></tr></tbody></table>`;
+        await loadBlocks(latest, 15);
+      } catch (e) {
+        _homeFailCount++;
+        if (_homeFailCount <= 2) {
+          // Silently retry — keep the spinner, try again in 4 s
+          setLoading("Connecting…");
+          setTimeout(home, 4000);
+        } else {
+          // Show error only after repeated failures; auto-retry countdown
+          let secs = 15;
+          const tick = () => {
+            showError(`${e.message} — retrying in ${secs}s`, home);
+            if (secs > 0) { secs--; setTimeout(tick, 1000); }
+            else { _homeFailCount = 0; home(); }
+          };
+          tick();
+        }
+      }
+    }
+
+    async function loadBlocks(from, count) {
+      const tbody = document.getElementById("blocks");
+      if (!tbody) return;
+      const nums = [];
+      for (let i = 0; i < count && from - i >= 0; i++) nums.push(from - i);
+      const blocks = await Promise.all(
+        nums.map(n => rpc("eth_getBlockByNumber", ["0x" + n.toString(16), true]))
+      );
+      const rows = blocks.filter(Boolean).map((b, i) => {
+        const n = nums[i];
+        return `<tr>
+          <td>${linkBlock(n)}</td>
+          <td><a class="mono hash" href="#/block/${n}" title="${esc(b.hash)}">${short(b.hash)}</a></td>
+          <td>${(b.transactions || []).length}</td>
+          <td>${renderProducer(b)}</td>
+          <td>${fmtTime(hex(b.timestamp))}</td>
+        </tr>`;
+      });
+      tbody.innerHTML = rows.join("") || `<tr><td colspan="5">No blocks found</td></tr>`;
+    }
+
+    async function showBlock(num) {
+      setLoading("Loading block…");
+      const n = Number(num);
+      if (!Number.isFinite(n) || n < 0) return showError("Invalid block number");
+      try {
+        const b = await rpc("eth_getBlockByNumber", ["0x" + n.toString(16), true]);
+        if (!b) return showError("Block not found");
+        const txs = (b.transactions || []).map(tx => `<tr>
+          <td>${linkTx(tx.hash)}</td>
+          <td>${linkAddr(tx.from)}</td>
+          <td>${tx.to ? linkAddr(tx.to) : "<em>contract</em>"}</td>
+          <td class="mono">${fmtWei(tx.value)} UST</td>
+        </tr>`).join("") || `<tr><td colspan="4">No transactions</td></tr>`;
+        const producer = blockProducer(b);
+        const prev = n > 0 ? `<a class="btn btn-outline" href="#/block/${n - 1}">← Block ${n - 1}</a>` : "";
+        const next = `<a class="btn btn-outline" href="#/block/${n + 1}">Block ${n + 1} →</a>`;
+        document.getElementById("app").innerHTML = `
+          <div class="panel">
+            <h1>Block ${fmtNum(n)}</h1>
+            <dl class="row"><dt>Hash</dt><dd class="mono">${esc(b.hash)} ${copyBtn(b.hash)}</dd></dl>
+            <dl class="row"><dt>Parent</dt><dd class="mono">${esc(b.parentHash)} ${copyBtn(b.parentHash)}</dd></dl>
+            <dl class="row"><dt>${producer.label}</dt><dd>${producer.addr ? linkAddr(producer.addr) + copyBtn(producer.addr) : "<span style=\"color:var(--muted)\">Clique PoA validator</span>"}</dd></dl>
+            <dl class="row"><dt>Timestamp</dt><dd>${fmtTime(hex(b.timestamp))}</dd></dl>
+            <dl class="row"><dt>Gas used</dt><dd>${fmtNum(hex(b.gasUsed))} / ${fmtNum(hex(b.gasLimit))}</dd></dl>
+            <dl class="row"><dt>Transactions</dt><dd>${(b.transactions || []).length}</dd></dl>
+          </div>
+          <h2 class="section">Transactions</h2>
+          <table><thead><tr><th>Hash</th><th>From</th><th>To</th><th>Value</th></tr></thead><tbody>${txs}</tbody></table>
+          <div class="nav-row">${prev}${next}<a class="btn btn-outline" href="#">← Home</a></div>`;
+        bindCopyButtons();
+      } catch (e) {
+        showError(e.message, () => showBlock(num));
+      }
+    }
+
+    async function showTx(hash) {
+      setLoading("Loading transaction…");
+      if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) return showError("Invalid transaction hash");
+      try {
+        const [tx, receipt] = await Promise.all([
+          rpc("eth_getTransactionByHash", [hash]),
+          rpc("eth_getTransactionReceipt", [hash]),
+        ]);
+        if (!tx) return showError("Transaction not found");
+        const status = receipt ? (hex(receipt.status) === 1 ? '<span class="badge-ok">Success</span>' : '<span class="badge-fail">Failed</span>') : "—";
+        document.getElementById("app").innerHTML = `
+          <div class="panel">
+            <h1>Transaction</h1>
+            <dl class="row"><dt>Hash</dt><dd class="mono">${esc(tx.hash)} ${copyBtn(tx.hash)}</dd></dl>
+            <dl class="row"><dt>Block</dt><dd>${linkBlock(hex(tx.blockNumber))}</dd></dl>
+            <dl class="row"><dt>From</dt><dd>${linkAddr(tx.from)} ${copyBtn(tx.from)}</dd></dl>
+            <dl class="row"><dt>To</dt><dd>${tx.to ? linkAddr(tx.to) + copyBtn(tx.to) : "<em>contract create</em>"}</dd></dl>
+            <dl class="row"><dt>Value</dt><dd><strong>${fmtWei(tx.value)} UST</strong></dd></dl>
+            <dl class="row"><dt>Gas</dt><dd>${fmtNum(hex(tx.gas))} @ ${fmtGwei(tx.gasPrice)}</dd></dl>
+            <dl class="row"><dt>Gas used</dt><dd>${receipt ? fmtNum(hex(receipt.gasUsed)) : "—"}</dd></dl>
+            <dl class="row"><dt>Status</dt><dd>${status}</dd></dl>
+            <dl class="row"><dt>Input</dt><dd class="mono" style="font-size:0.75rem;word-break:break-all">${esc(tx.input)}</dd></dl>
+          </div>
+          <div class="nav-row"><a class="btn btn-outline" href="#/block/${hex(tx.blockNumber)}">View block</a><a class="btn btn-outline" href="#">← Home</a></div>`;
+        bindCopyButtons();
+      } catch (e) {
+        showError(e.message, () => showTx(hash));
+      }
+    }
+
+    async function showAddress(addr) {
+      setLoading("Loading address…");
+      const checksum = addr.startsWith("0x") ? addr : "0x" + addr;
+      if (!/^0x[0-9a-fA-F]{40}$/.test(checksum)) return showError("Invalid address");
+      try {
+        const [balance, nonceHex, code] = await Promise.all([
+          rpc("eth_getBalance", [checksum, "latest"]),
+          rpc("eth_getTransactionCount", [checksum, "latest"]),
+          rpc("eth_getCode", [checksum, "latest"]),
+        ]);
+        const nonce = hex(nonceHex);
+        const isContract = code && code !== "0x";
+        const isMine = checksum.toLowerCase() === MINE_CONTRACT.toLowerCase();
+        document.getElementById("app").innerHTML = `
+          <div class="panel">
+            <h1>${isContract ? "Contract" : "Address"}</h1>
+            <dl class="row"><dt>Address</dt><dd class="mono">${esc(checksum)} ${copyBtn(checksum)}</dd></dl>
+            <dl class="row"><dt>Balance</dt><dd><strong>${fmtWei(balance)} UST</strong></dd></dl>
+            <dl class="row"><dt>Nonce</dt><dd>${fmtNum(nonce)}</dd></dl>
+            <dl class="row"><dt>Type</dt><dd>${isContract ? "Smart contract" : "EOA (wallet)"}${isMine ? " · <a href=\"#/about\">USSTMine pool</a>" : ""}</dd></dl>
+          </div>
+          <div class="nav-row"><a class="btn btn-outline" href="#">← Home</a></div>`;
+        bindCopyButtons();
+      } catch (e) {
+        showError(e.message, () => showAddress(addr));
+      }
+    }
+
+    async function addToMetaMask() {
+      if (!window.ethereum) {
+        alert("MetaMask not found. Install the MetaMask extension.");
+        return;
+      }
+      try {
+        await window.ethereum.request({
+          method: "wallet_addEthereumChain",
+          params: [METAMASK_CHAIN],
+        });
+      } catch (e) {
+        alert(e.message || "Failed to add network");
+      }
+    }
+
+    function calcROI() {
+      const hr      = parseFloat(document.getElementById("roi_hr").value)    || 590;
+      const price   = parseFloat(document.getElementById("roi_price").value)  || 0.021;
+      const netHr   = parseFloat(document.getElementById("roi_net").value)    || 590;
+      const diff    = parseFloat(document.getElementById("roi_diff").value)   || 500000;
+      const reward  = 0.098; // net UST per proof (0.1 * 0.98)
+
+      // Proofs per second per miner = HR_mh * 1e6 / difficulty
+      const myProofsPerSec  = (hr  * 1e6) / diff;
+      const netProofsPerSec = (netHr * 1e6) / diff;
+      const myShare         = netProofsPerSec > 0 ? myProofsPerSec / netProofsPerSec : 1;
+
+      const proofPerHour  = myProofsPerSec * 3600;
+      const ustPerHour    = proofPerHour * reward * myShare;
+      const ustPerDay     = ustPerHour * 24;
+      const usdPerDay     = ustPerDay * price;
+
+      document.getElementById("roi_result").innerHTML = `
+        <div style="background:#0b1a2e;border:1px solid #2a3548;border-radius:8px;padding:0.9rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;text-align:center">
+          <div><div style="color:#00d4aa;font-size:1.1rem;font-weight:700">${ustPerDay.toFixed(4)} UST</div><div style="color:#8b9cb3;font-size:0.75rem">per day</div></div>
+          <div><div style="color:#d4a017;font-size:1.1rem;font-weight:700">$${usdPerDay.toFixed(4)}</div><div style="color:#8b9cb3;font-size:0.75rem">USD per day</div></div>
+          <div><div style="color:#c9d1d9;font-size:1.1rem;font-weight:700">${(myShare*100).toFixed(1)}%</div><div style="color:#8b9cb3;font-size:0.75rem">network share</div></div>
+        </div>
+        <p style="font-size:0.76rem;color:#5a6a7e;margin-top:0.6rem">Estimate assumes constant difficulty, no block gaps, and no latency. Actual results vary.</p>`;
+    }
+
+    function showAbout() {
+      document.getElementById("app").innerHTML = `
+        <div class="about" style="border-color:#2a3548">
+          <h2 style="font-size:1.15rem">UST Network — EVM Network</h2>
+          <p>An open, independent EVM-compatible blockchain with native token <strong>UST</strong>.
+          No premine, no ICO, no founder allocation. Every UST is earned through Proof-of-Work mining — open to anyone with a CPU or GPU.</p>
+
+          <div style="margin-top:1.1rem;padding:1rem;background:#0b0f14;border:1px solid #2a3548;border-left:3px solid #d4a017;border-radius:8px">
+<div style="margin-top:1.1rem;padding:1rem;background:#0b0f14;border:1px solid #0d3d32;border-left:3px solid #00d4aa;border-radius:8px">
+            <div style="font-size:0.78rem;color:#00d4aa;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.5rem">💎 Support the Network — Fund the Pool</div>
+            <p style="font-size:0.83rem;color:#8b9cb3;line-height:1.7;margin-bottom:0.75rem">
+              The mining pool is sustained by the community. Any amount of UST sent to the mining contract directly increases rewards for all miners. Every contribution extends the network's lifespan and keeps the pool healthy for new participants.
+            </p>
+            <div style="font-size:0.8rem;color:#8b9cb3;margin-bottom:0.75rem">
+              Mining contract: <span class="mono" style="color:#00d4aa">${MINE_CONTRACT}</span>
+              <button type="button" class="copy" data-copy="${MINE_CONTRACT}">copy</button>
+            </div>
+            <button type="button" class="btn btn-mint" id="fundPoolBtn" style="font-size:0.85rem;padding:0.5rem 1.1rem">
+              Send UST to Pool via MetaMask
+            </button>
+            <div id="fundStatus" style="margin-top:0.6rem;font-size:0.8rem;color:#8b9cb3"></div>
+          </div>
+
+          <p style="margin-top:1rem">
+            <span class="tag">Chain ID 778889</span>
+            <span class="tag">EVM-compatible</span>
+            <span class="tag">Open PoW Mining</span>
+            <span class="tag">No premine</span>
+            <span class="tag">Halving + Burn</span>
+            <span class="tag">Free faucet</span>
+            <span class="tag">Open Source</span>
+          </p>
+          <div class="links">
+            <a href="https://github.com/klaren1987/UST-chain" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://klaren1987.github.io/UST-chain/" target="_blank" rel="noopener">Website</a>
+            <a href="https://github.com/klaren1987/UST-chain/blob/main/docs/whitepaper.md" target="_blank" rel="noopener">Whitepaper</a>
+            <a href="/rpc" target="_blank">RPC</a>
+            <a href="/faucet">💧 Faucet</a>
+          </div>
+        </div>
+        <div class="panel">
+          <h1>MetaMask</h1>
+          <dl class="row"><dt>Network</dt><dd>UST Network</dd></dl>
+          <dl class="row"><dt>RPC URL</dt><dd class="mono">https://147-45-143-23.sslip.io/rpc ${copyBtn("https://147-45-143-23.sslip.io/rpc")}</dd></dl>
+          <dl class="row"><dt>Chain ID</dt><dd>778889</dd></dl>
+          <dl class="row"><dt>Symbol</dt><dd>UST</dd></dl>
+          <dl class="row"><dt>Explorer</dt><dd class="mono">https://147-45-143-23.sslip.io</dd></dl>
+          <p style="margin-top:1rem"><button type="button" class="btn btn-mint" id="addMetaMask">Add to MetaMask</button></p>
+        </div>
+        <div class="panel">
+          <h1>Mining</h1>
+          <dl class="row"><dt>Contract</dt><dd class="mono"><a href="#/address/${MINE_CONTRACT}">${MINE_CONTRACT}</a> ${copyBtn(MINE_CONTRACT)}</dd></dl>
+          <dl class="row"><dt>Reward</dt><dd>0.1 UST/proof (halving every 50,000 proofs)</dd></dl>
+          <dl class="row"><dt>Algorithm</dt><dd>keccak256(miner, nonce, workBlock)</dd></dl>
+          <dl class="row"><dt>Block window</dt><dd>10 blocks (~50 seconds)</dd></dl>
+          <dl class="row"><dt>GPU</dt><dd>NVIDIA CUDA (~590 MH/s RTX 4060)</dd></dl>
+          <p style="margin-top:0.75rem"><a href="https://github.com/klaren1987/UST-chain" target="_blank" rel="noopener">Miner on GitHub →</a></p>
+        </div>
+        <div class="panel" id="roiCalc">
+          <h1>Mining ROI Calculator</h1>
+          <p style="font-size:0.82rem;color:#8b9cb3;margin-bottom:1rem">Estimate your expected earnings based on hash-rate and current network parameters.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.85rem">
+            <div>
+              <label style="color:#8b9cb3;display:block;margin-bottom:0.3rem">Your hash-rate (MH/s)</label>
+              <input id="roi_hr" type="number" value="590" min="1" style="width:100%;padding:0.4rem 0.6rem;background:#0b1a2e;border:1px solid #2a3548;border-radius:6px;color:#e8edf4;font-size:0.9rem" />
+            </div>
+            <div>
+              <label style="color:#8b9cb3;display:block;margin-bottom:0.3rem">UST price (USD)</label>
+              <input id="roi_price" type="number" value="0.021" min="0.0001" step="0.001" style="width:100%;padding:0.4rem 0.6rem;background:#0b1a2e;border:1px solid #2a3548;border-radius:6px;color:#e8edf4;font-size:0.9rem" />
+            </div>
+            <div>
+              <label style="color:#8b9cb3;display:block;margin-bottom:0.3rem">Competing hash-rate (MH/s)</label>
+              <input id="roi_net" type="number" value="590" min="1" style="width:100%;padding:0.4rem 0.6rem;background:#0b1a2e;border:1px solid #2a3548;border-radius:6px;color:#e8edf4;font-size:0.9rem" />
+            </div>
+            <div>
+              <label style="color:#8b9cb3;display:block;margin-bottom:0.3rem">Difficulty</label>
+              <input id="roi_diff" type="number" value="500000" min="100000" style="width:100%;padding:0.4rem 0.6rem;background:#0b1a2e;border:1px solid #2a3548;border-radius:6px;color:#e8edf4;font-size:0.9rem" />
+            </div>
+          </div>
+          <button type="button" onclick="calcROI()" style="margin-top:0.9rem;padding:0.45rem 1.2rem;background:#00d4aa;color:#0b1419;font-weight:700;border:none;border-radius:6px;cursor:pointer;font-size:0.88rem">Calculate</button>
+          <div id="roi_result" style="margin-top:1rem;font-size:0.85rem;color:#c9d1d9"></div>
+        </div>
+        <div class="nav-row"><a class="btn btn-outline" href="#">← Home</a></div>`;
+      document.getElementById("addMetaMask").onclick = addToMetaMask;
+
+      document.getElementById("fundPoolBtn").onclick = async () => {
+        const statusEl = document.getElementById("fundStatus");
+        if (!window.ethereum) {
+          statusEl.textContent = "MetaMask not detected. Install it to send UST to the pool.";
+          statusEl.style.color = "var(--red)";
+          return;
+        }
+        try {
+          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+          const from = accounts[0];
+          const amountHex = "0x" + (BigInt(Math.round(0.1 * 1e18))).toString(16);
+          statusEl.textContent = "Opening MetaMask — enter any amount of UST to send to the pool…";
+          statusEl.style.color = "var(--muted)";
+          await window.ethereum.request({
+            method: "eth_sendTransaction",
+            params: [{
+              from,
+              to: MINE_CONTRACT,
+              value: amountHex,
+              gas: "0x5208",
+            }],
+          });
+          statusEl.textContent = "✓ Transaction submitted. Thank you for supporting the network.";
+          statusEl.style.color = "var(--green)";
+        } catch (e) {
+          statusEl.textContent = "Cancelled: " + (e.message || e);
+          statusEl.style.color = "var(--muted)";
+        }
+      };
+
+      bindCopyButtons();
+    }
+
+    function route() {
+      clearInterval(refreshTimer);
+      const hash = location.hash.slice(1) || "/";
+      const parts = hash.split("/").filter(Boolean);
+      if (parts.length === 0) {
+        home();
+        refreshTimer = setInterval(() => {
+          if (!location.hash || location.hash === "#/" || location.hash === "#") home();
+        }, 10000);
+        return;
+      }
+      if (parts[0] === "block") return showBlock(parts[1]);
+      if (parts[0] === "tx") return showTx(parts[1]);
+      if (parts[0] === "address") return showAddress(parts[1]);
+      if (parts[0] === "about") return showAbout();
+      home();
+    }
+
+    document.getElementById("searchForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      let q = document.getElementById("searchInput").value.trim();
+      if (/^\d+$/.test(q)) location.hash = "#/block/" + q;
+      else if (/^0x[0-9a-fA-F]{64}$/i.test(q)) location.hash = "#/tx/" + q;
+      else if (/^0x[0-9a-fA-F]{40}$/i.test(q)) location.hash = "#/address/" + q;
+      else if (/^[0-9a-fA-F]{64}$/i.test(q)) location.hash = "#/tx/0x" + q;
+      else if (/^[0-9a-fA-F]{40}$/i.test(q)) location.hash = "#/address/0x" + q;
+      else showError("Enter block number, tx hash (0x…) or address (0x…)", route);
+    });
+
+    document.getElementById("homeLink").addEventListener("click", (e) => {
+      e.preventDefault();
+      location.hash = "#/";
+    });
+
+    window.addEventListener("hashchange", route);
+    route();
+    setInterval(pingRpc, 30000);
+  </script>
+</body>
+</html>
