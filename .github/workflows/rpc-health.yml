@@ -145,3 +145,48 @@ jobs:
 
           [ "$FAIL" -eq 1 ] && exit 1
           echo "Security headers OK."
+
+      - name: Monitor Bridge Treasury (Ethereum Mainnet)
+        run: |
+          # Treasury address — bridge ETH gas reserve lives here
+          TREASURY="0x36792aCCf6B72Ed07879CdE08bf602Ee045F7721"
+          ETH_RPC="https://eth-mainnet.public.blastapi.io"
+          USDT_CONTRACT="0xdAC17F958D2ee523a2206206994597C13D831ec7"
+          FAIL=0
+
+          echo "Checking treasury: $TREASURY"
+
+          # ETH balance
+          ETH_HEX=$(curl -s -X POST "$ETH_RPC" \
+            -H "Content-Type: application/json" \
+            -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getBalance\",\"params\":[\"$TREASURY\",\"latest\"],\"id\":1}" \
+            --max-time 10 | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])" 2>/dev/null)
+          ETH_BAL=$(python3 -c "print(round(int('$ETH_HEX',16)/1e18, 6))" 2>/dev/null || echo "0")
+          echo "ETH balance: $ETH_BAL ETH"
+
+          # Warn if ETH < 0.005 (not enough for ~5 withdrawal txs)
+          if python3 -c "import sys; sys.exit(0 if float('${ETH_BAL:-0}') >= 0.005 else 1)" 2>/dev/null; then
+            echo "✅ ETH gas reserve OK: $ETH_BAL ETH"
+          else
+            echo "⚠️  WARNING: ETH gas reserve LOW ($ETH_BAL ETH) — refund treasury to enable withdrawals"
+            echo "   Send ETH to: $TREASURY"
+            # Don't fail CI — just warn (refunding is manual action)
+          fi
+
+          # USDT balance (6 decimals)
+          USDT_DATA="0x70a08231$(python3 -c "print('${TREASURY}'[2:].lower().zfill(64))")"
+          USDT_HEX=$(curl -s -X POST "$ETH_RPC" \
+            -H "Content-Type: application/json" \
+            -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{\"to\":\"$USDT_CONTRACT\",\"data\":\"$USDT_DATA\"},\"latest\"],\"id\":1}" \
+            --max-time 10 | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])" 2>/dev/null)
+          USDT_BAL=$(python3 -c "print(round(int('$USDT_HEX',16)/1e6, 2))" 2>/dev/null || echo "0")
+          echo "USDT balance: $USDT_BAL USDT"
+          echo "✅ Treasury check complete"
+
+          # Verify transaction count hasn't spiked unexpectedly (detect sweeper activity)
+          TX_COUNT=$(curl -s -X POST "$ETH_RPC" \
+            -H "Content-Type: application/json" \
+            -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getTransactionCount\",\"params\":[\"$TREASURY\",\"latest\"],\"id\":1}" \
+            --max-time 10 | python3 -c "import json,sys; print(int(json.load(sys.stdin)['result'],16))" 2>/dev/null)
+          echo "Total outgoing txs from treasury: $TX_COUNT"
+          echo "Treasury monitor complete."

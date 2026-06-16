@@ -60,6 +60,10 @@ MIN_USDT        = float(os.getenv("BRIDGE_MIN_USDT",   "1.0"))
 MAX_USDT        = float(os.getenv("BRIDGE_MAX_USDT",   "10000.0"))
 RATE_LIMIT      = int(os.getenv("BRIDGE_RATE_LIMIT",   "5"))
 
+# Minimum ETH to keep in treasury for gas — warn loudly if below
+ETH_WARN_WEI    = int(float(os.getenv("BRIDGE_ETH_WARN",  "0.005")) * 1e18)
+ETH_PAUSE_WEI   = int(float(os.getenv("BRIDGE_ETH_PAUSE", "0.0005")) * 1e18)  # pause withdrawals below this
+
 for var, val in [("BRIDGE_OPERATOR_KEY", OPERATOR_KEY), ("BRIDGED_USDT_ADDRESS", BRIDGED_USDT),
                  ("ETH_RPC", ETH_RPC), ("BRIDGE_TREASURY_ADDRESS", TREASURY)]:
     if not val:
@@ -123,6 +127,49 @@ def get_usdt_balance(url, chain_id, address) -> int:
     result   = _rpc(url, "eth_call",
                     [{"to": REAL_USDT_ETH, "data": selector + padded}, "latest"])
     return int(result, 16)
+
+def get_eth_balance(address: str) -> int:
+    """Return treasury ETH balance in wei on Ethereum mainnet."""
+    try:
+        result = _rpc(ETH_RPC, "eth_getBalance", [address, "latest"])
+        return int(result, 16)
+    except Exception:
+        return -1
+
+_last_eth_warn = 0.0
+
+def check_treasury_eth() -> bool:
+    """Check treasury ETH balance. Return False if withdrawals should pause."""
+    global _last_eth_warn
+    bal = get_eth_balance(TREASURY)
+    if bal < 0:
+        return True  # RPC error — don't block
+    now = time.time()
+    if bal == 0:
+        if now - _last_eth_warn > 3600:
+            log.critical(
+                f"TREASURY_ETH_EMPTY  treasury={TREASURY}  "
+                f"Withdrawals paused. Send ETH to treasury to resume."
+            )
+            _last_eth_warn = now
+        return False
+    if bal < ETH_PAUSE_WEI:
+        if now - _last_eth_warn > 3600:
+            log.error(
+                f"TREASURY_ETH_CRITICAL  balance={bal/1e18:.6f} ETH  "
+                f"threshold={ETH_PAUSE_WEI/1e18:.4f} ETH  Pausing withdrawals."
+            )
+            _last_eth_warn = now
+        return False
+    if bal < ETH_WARN_WEI:
+        if now - _last_eth_warn > 3600:
+            log.warning(
+                f"TREASURY_ETH_LOW  balance={bal/1e18:.6f} ETH  "
+                f"warn_threshold={ETH_WARN_WEI/1e18:.4f} ETH  "
+                f"Please top up: {TREASURY}"
+            )
+            _last_eth_warn = now
+    return True
 
 def send_tx(url, chain_id, to, data, value=0):
     nonce     = int(_rpc(url, "eth_getTransactionCount", [operator.address, "pending"]), 16)
@@ -257,6 +304,11 @@ def main():
 
                     if not eth_addr or not eth_addr.startswith("0x") or len(eth_addr) != 42:
                         log.error(f"  INVALID_ETH_ADDR '{eth_addr}' — manual action required")
+                        continue
+
+                    # Pre-flight: check treasury ETH gas balance
+                    if not check_treasury_eth():
+                        log.error(f"  PAUSED_NO_GAS  ust_tx={tx_hash} — top up ETH at {TREASURY}")
                         continue
 
                     # Pre-flight: check treasury USDT balance

@@ -290,13 +290,41 @@ async function loadReserve(treasury) {
     const balEth = parseInt(result || "0x0", 16) / 1e18;
     const el = document.getElementById("gasVal");
     el.textContent = balEth.toFixed(4) + " ETH";
-    if (balEth < 0.005) {
+    if (balEth === 0) {
       el.classList.add("empty");
-      el.title = "Low ETH — withdrawals may be delayed";
+      el.title = "No ETH — withdrawals are paused until treasury is refunded";
+      showGasWarning("critical");
+    } else if (balEth < 0.005) {
+      el.classList.add("empty");
+      el.title = "Low ETH — fewer than ~5 withdrawals remaining";
+      showGasWarning("low");
     }
   } catch {
     document.getElementById("gasVal").textContent = "unavailable";
   }
+}
+
+function showGasWarning(level) {
+  const existing = document.getElementById("gasWarning");
+  if (existing) return;
+  const warn = document.createElement("div");
+  warn.id = "gasWarning";
+  const isCritical = level === "critical";
+  warn.style.cssText = `
+    margin: 12px 0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    border: 1px solid ${isCritical ? "#f85149" : "#d4a017"};
+    background: ${isCritical ? "rgba(248,81,73,0.08)" : "rgba(212,160,23,0.08)"};
+    color: ${isCritical ? "#f85149" : "#d4a017"};
+  `;
+  warn.innerHTML = isCritical
+    ? "⛽ <strong>ETH gas reserve is empty.</strong> Withdrawals are temporarily paused. The operator needs to top up the treasury."
+    : "⛽ <strong>ETH gas reserve is low.</strong> Withdrawals may be delayed soon.";
+  // Insert after reserve panel
+  const panel = document.querySelector(".reserve-panel") || document.querySelector(".tab-body");
+  if (panel) panel.insertAdjacentElement("afterend", warn);
 }
 
 async function submitDeposit() {
