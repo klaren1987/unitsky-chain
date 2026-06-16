@@ -42,6 +42,7 @@ fi
 exec geth --datadir "$DATADIR" \
   --networkid "${USST_CHAIN_ID:-778889}" \
   --syncmode full \
+  --gcmode archive \
   --http --http.addr 0.0.0.0 --http.port 8545 \
   --http.api eth,net,web3,txpool,debug \
   --http.corsdomain "*" \
