@@ -177,10 +177,11 @@
 <script>
 // ─── Constants ────────────────────────────────────────────────────────────────
 const RPC      = "https://147-45-143-23.sslip.io/rpc";
-const ROUTER   = "0xfd9B22033f1d5B1725D66d428F85bAa44EC5e848";
-const WUST     = "0x372cf3bc672639f4089d493c3863933affd88014";
-const USDT     = "0xcd7cb25f025B20D5f90C0FDA3463D91AF76A8EF1"; // BridgedUSDT 18 decimals
-const PAIR     = "0x0f53baf46172bddf8004909d05e9ab8592ca08e7"; // WUST/bUSDT (token0=WUST, token1=bUSDT)
+const ROUTER   = "0x55388457eB861a6cbEefE5561073b5BE90674829";
+const WUST     = "0xdEe09052443b21DcceeAa489EFf0bb415d868943";
+const USDT     = "0xcc96158a84d2821fbae89593c33f9e244964d189"; // BridgedUSDT 6 decimals
+const PAIR     = "0xEcce2B5D19Cb673F295A64b582aF73fB206D3277"; // WUST/bUSDT
+const USDT_DECIMALS = 6;
 const CHAIN_ID = "0xBE289";
 const SLIPPAGE = 0.005; // 0.5%
 
@@ -217,7 +218,7 @@ function fmt18(wei) {
   return parseFloat(ethers.formatEther(wei)).toLocaleString("en", {maximumFractionDigits: 4});
 }
 function fmt18usdt(u) {
-  return parseFloat(ethers.formatEther(u)).toLocaleString("en", {maximumFractionDigits: 2});
+  return parseFloat(ethers.formatUnits(u, USDT_DECIMALS)).toLocaleString("en", {maximumFractionDigits: 2});
 }
 
 function setStatus(msg, cls) {
@@ -235,22 +236,31 @@ function setApproveNote(msg) {
 
 // ─── Wallet ───────────────────────────────────────────────────────────────────
 async function connectWallet() {
-  if (!window.ethereum) { setStatus("MetaMask not found", "err"); return; }
+  if (!window.ethereum) { setStatus("MetaMask not found — install it first", "err"); return; }
+  // Try to switch to UST Network; if not added yet — add it
   try {
     await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{chainId: CHAIN_ID}] });
   } catch(e) {
-    if (e.code === 4902 || e.code === -32603) {
+    const code = e.code ?? e.data?.code;
+    // 4902 = chain not added, -32603 / -32000 = internal error (also means not added)
+    if (code === 4902 || code === -32603 || code === -32000 || String(e.message).includes("Unrecognized")) {
       try {
         await window.ethereum.request({
           method: "wallet_addEthereumChain",
           params: [{ chainId: CHAIN_ID, chainName: "UST Network",
             nativeCurrency: {name:"UST", symbol:"UST", decimals:18},
-            rpcUrls: [RPC], blockExplorerUrls: ["https://147-45-143-23.sslip.io"] }]
+            rpcUrls: [RPC],
+            blockExplorerUrls: ["https://blockscout.byteboost.ru"] }]
         });
-      } catch(e2) { setStatus("Failed to add network: " + (e2.message || e2), "err"); return; }
-    } else if (e.code !== 4001) {
-      setStatus("Network switch error: " + (e.message || e), "err"); return;
-    } else { return; } // user rejected
+      } catch(e2) {
+        if (e2.code === 4001) return; // user rejected
+        setStatus("Не удалось добавить сеть: " + (e2.message || e2), "err"); return;
+      }
+    } else if (code === 4001) {
+      return; // user rejected
+    } else {
+      setStatus("Ошибка сети: " + (e.message || e), "err"); return;
+    }
   }
 
   let accounts;
@@ -312,7 +322,7 @@ async function refreshPool() {
     const wustR = isUsdt0 ? r1 : r0;
     poolReserveUsdt = usdtR;
     poolReserveUst  = wustR;
-    const usdtF = Number(ethers.formatEther(usdtR));
+    const usdtF = Number(ethers.formatUnits(usdtR, USDT_DECIMALS));
     const wustF = Number(ethers.formatEther(wustR));
     const price = usdtF / wustF;
     const tvl = usdtF * 2;
@@ -324,6 +334,9 @@ async function refreshPool() {
   } catch(e) {
     $("statPrice").textContent = "—";
     $("statTvl").textContent   = "—";
+    $("statUst").textContent   = "—";
+    $("statUsdt").textContent  = "—";
+    console.error("refreshPool error:", e?.message || e);
   }
 }
 
@@ -348,17 +361,18 @@ async function calcOut() {
 
   const router = new ethers.Contract(ROUTER, ROUTER_ABI, readProvider);
   try {
-    let amtIn, path, outDecimals;
+    let amtIn, path;
     if (fromUST) {
       amtIn = ethers.parseEther(String(amt));
       path = [WUST, USDT];
     } else {
-      amtIn = ethers.parseEther(String(amt));
+      amtIn = ethers.parseUnits(String(amt), USDT_DECIMALS);
       path = [USDT, WUST];
     }
     const amounts = await router.getAmountsOut(amtIn, path);
     const outRaw = amounts[1];
-    const outF = Number(ethers.formatEther(outRaw));
+    const outDecimals = fromUST ? USDT_DECIMALS : 18;
+    const outF = Number(ethers.formatUnits(outRaw, outDecimals));
     $("toAmt").value = outF.toFixed(4);
 
     // Real price impact using Uniswap V2 formula
@@ -376,7 +390,7 @@ function calcPriceImpact(amtIn, path) {
   // Uniswap V2 formula: impact = amtIn / (reserveIn + amtIn) * 100
   if (!poolReserveUst || !poolReserveUsdt) return 0;
   const isUSTin = path[0].toLowerCase() === WUST.toLowerCase();
-  const reserveIn = isUSTin ? Number(ethers.formatEther(poolReserveUst)) : Number(ethers.formatEther(poolReserveUsdt));
+  const reserveIn = isUSTin ? Number(ethers.formatEther(poolReserveUst)) : Number(ethers.formatUnits(poolReserveUsdt, USDT_DECIMALS));
   const amtInF    = isUSTin ? Number(ethers.formatEther(amtIn)) : Number(ethers.formatEther(amtIn));
   return Math.min((amtInF / (reserveIn + amtInF)) * 100, 99);
 }
@@ -387,7 +401,7 @@ function setMax() {
     const maxWei = ustBal > ethers.parseEther("0.01") ? ustBal - ethers.parseEther("0.01") : 0n;
     $("fromAmt").value = parseFloat(ethers.formatEther(maxWei)).toFixed(6);
   } else {
-    $("fromAmt").value = parseFloat(ethers.formatEther(usdtBal)).toFixed(6);
+    $("fromAmt").value = parseFloat(ethers.formatUnits(usdtBal, USDT_DECIMALS)).toFixed(6);
   }
   calcOut();
 }
@@ -425,7 +439,7 @@ async function doSwap() {
       setStatus("Confirm in MetaMask…", "info");
       tx = await router.swapExactETHForTokens(minOut, [WUST, USDT], account, deadline, { value: amtIn });
     } else {
-      const amtIn = ethers.parseEther(String(amt));
+      const amtIn = ethers.parseUnits(String(amt), USDT_DECIMALS);
       const usdtContract = new ethers.Contract(USDT, ERC20_ABI, signer);
       const allowance = await usdtContract.allowance(account, ROUTER);
       if (allowance < amtIn) {

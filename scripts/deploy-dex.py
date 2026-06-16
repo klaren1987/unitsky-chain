@@ -11,13 +11,15 @@ from eth_account import Account
 
 # ── Config ────────────────────────────────────────────────────────────────────
 RPC           = os.getenv("USST_RPC", "http://unitsky-string-node:8545")
-KEY           = os.getenv("USST_DEPLOYER_KEY", "0x3014dac8e7e8082dd791032d9b451bcaf5f5b3b59f1bcc748516e78ba35555bc")
+KEY           = os.getenv("USST_DEPLOYER_KEY", "")
+BRIDGE_OP_KEY = os.getenv("BRIDGE_OPERATOR_KEY", "")  # used for bridgeMint
 CHAIN_ID      = 778889
-BRIDGED_USDT  = os.getenv("BRIDGED_USDT_ADDRESS", "0xcd7cb25f025B20D5f90C0FDA3463D91AF76A8EF1")
+BRIDGED_USDT  = os.getenv("BRIDGED_USDT_ADDRESS", "0xcc96158a84d2821fbae89593c33f9e244964d189")
+USDT_DECIMALS = 6  # BridgedUSDT uses 6 decimals (same as real Tether)
 
-# Initial liquidity to seed pool: 10 UST + 1 bUSDT (just enough for price discovery)
-LIQUIDITY_UST_WEI  = 10 * 10**18      # 10 UST (native)
-LIQUIDITY_USDT_RAW = 1 * 10**18       # 1 bUSDT (18 decimals)
+# Initial liquidity to seed pool: 10 UST + 10 bUSDT (1 UST = 1 USDT initial price)
+LIQUIDITY_UST_WEI  = 10 * 10**18           # 10 UST (native, 18 decimals)
+LIQUIDITY_USDT_RAW = 10 * 10**USDT_DECIMALS  # 10 USDT (6 decimals)
 
 DEPLOY_DIR = Path("/tmp/uniswap-v2-deploy")
 DEPLOY_DIR.mkdir(exist_ok=True)
@@ -368,13 +370,24 @@ print(f"  Deployer bUSDT balance: {deployer_busdt / 1e18}")
 
 if deployer_busdt < LIQUIDITY_USDT_RAW:
     # Mint bUSDT to deployer via bridgeMint(address,uint256,bytes32)
-    print("  Minting 1 bUSDT to deployer...")
+    # Must be called from bridge operator key
+    if not BRIDGE_OP_KEY:
+        raise RuntimeError("BRIDGE_OPERATOR_KEY required for bridgeMint")
+    print("  Minting bUSDT to deployer (via bridge operator)...")
     sel_mint = "0x" + keccak(b"bridgeMint(address,uint256,bytes32)").hex()[:8]
-    # Use unique txhash based on current time to avoid duplicate processing
-    import struct
     fake_txhash = ("dex" + hex(int(time.time()))[2:]).encode().hex().ljust(64, '0')[:64]
     data_mint = sel_mint + encode_address(deployer.address) + hex(LIQUIDITY_USDT_RAW)[2:].zfill(64) + fake_txhash
-    receipt = send_tx(to_checksum(BRIDGED_USDT), data_mint)
+    # send from bridge operator
+    op_acct = Account.from_key(BRIDGE_OP_KEY)
+    op_nonce = get_nonce(op_acct.address)
+    gas = int(int(rpc("eth_estimateGas", [{"from": op_acct.address, "to": to_checksum(BRIDGED_USDT), "data": data_mint}]), 16) * 1.3)
+    tx = {"nonce": op_nonce, "gasPrice": get_gas_price(), "gas": gas,
+          "to": to_checksum(BRIDGED_USDT), "value": 0, "data": data_mint, "chainId": CHAIN_ID}
+    signed_op = op_acct.sign_transaction(tx)
+    raw_op = "0x" + signed_op.raw_transaction.hex()
+    txh = rpc("eth_sendRawTransaction", [raw_op])
+    print(f"  tx: {txh}")
+    wait_receipt(txh)
     print("  bUSDT minted")
 else:
     print("  Deployer already has enough bUSDT")

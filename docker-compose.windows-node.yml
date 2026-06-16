@@ -10,7 +10,7 @@ services:
     build:
       context: .
       dockerfile: docker/node.Dockerfile
-    container_name:?? UST-string-node
+    container_name: unitsky-string-node
     restart: unless-stopped
     stop_grace_period: 2m
     ports:
@@ -37,7 +37,7 @@ services:
 
   deploy:
     build: .
-    container_name:?? UST-string-deploy
+    container_name: unitsky-string-deploy
     depends_on:
       usst-node:
         condition: service_healthy

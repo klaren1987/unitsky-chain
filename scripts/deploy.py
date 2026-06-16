@@ -61,7 +61,7 @@ def main() -> int:
     contract = w3.eth.contract(abi=abi, bytecode=bytecode)
     nonce = w3.eth.get_transaction_count(deployer.address)
 
-    tx = contract.constructor().build_transaction(
+    tx = contract.constructor(0).build_transaction(
         {
             "from": deployer.address,
             "nonce": nonce,
