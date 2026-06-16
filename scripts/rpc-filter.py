@@ -25,8 +25,8 @@ import urllib.request
 from collections import defaultdict
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-GETH_URL = os.getenv("GETH_URL", "http://ust-node:8545")
-GETH_WS_URL = os.getenv("GETH_WS_URL", "ws://ust-node:8546")
+GETH_URL = os.getenv("GETH_URL", "http://unitsky-string-node:8545")
+GETH_WS_URL = os.getenv("GETH_WS_URL", "ws://unitsky-string-node:8546")
 LISTEN_PORT = int(os.getenv("RPC_FILTER_PORT", "8547"))
 LISTEN_WS_PORT = int(os.getenv("RPC_FILTER_WS_PORT", "8548"))
 CHAIN_ID = int(os.getenv("USST_CHAIN_ID", "778889"))

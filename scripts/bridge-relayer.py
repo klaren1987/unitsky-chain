@@ -247,8 +247,8 @@ def main():
 
             # ── UST withdrawals → send real USDT on Ethereum ─────────────────
             if ust_current > state["ust_last"]:
-                from_blk    = state["ust_last"] + 1
-                to_blk      = ust_current
+                from_blk = state["ust_last"] + 1
+                to_blk   = min(ust_current, from_blk + 500)
                 withdrawals = get_withdrawals(from_blk, to_blk)
 
                 for tx_hash, burner, amount, eth_addr in withdrawals:
@@ -280,7 +280,15 @@ def main():
             save_json(STATE_FILE, state)
 
         except Exception as e:
-            log.error(f"RELAYER_ERROR  {e}")
+            err_str = str(e)
+            log.error(f"RELAYER_ERROR  {err_str}")
+            # pebble: not found → Geth bloom filter missing for old blocks.
+            # Skip forward to avoid infinite retry on same broken range.
+            if "pebble: not found" in err_str and "ust_last" in state:
+                skip_to = state["ust_last"] + 50
+                log.warning(f"pebble error — skipping ust_last forward to {skip_to}")
+                state["ust_last"] = skip_to
+                save_json(STATE_FILE, state)
 
         time.sleep(POLL_INTERVAL)
 

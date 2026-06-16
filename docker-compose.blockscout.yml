@@ -58,9 +58,9 @@ services:
 
       # ── Chain / RPC ─────────────────────────────────────────────────────────
       ETHEREUM_JSONRPC_VARIANT: geth
-      ETHEREUM_JSONRPC_HTTP_URL: http://ust-node:8545
-      ETHEREUM_JSONRPC_TRACE_URL: http://ust-node:8545
-      ETHEREUM_JSONRPC_WS_URL: ws://ust-node:8546
+      ETHEREUM_JSONRPC_HTTP_URL: http://unitsky-string-node:8545
+      ETHEREUM_JSONRPC_TRACE_URL: http://unitsky-string-node:8545
+      ETHEREUM_JSONRPC_WS_URL: ws://unitsky-string-node:8546
       CHAIN_ID: "778889"
 
       # ── Network metadata ─────────────────────────────────────────────────────
