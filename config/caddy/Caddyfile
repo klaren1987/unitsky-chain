@@ -1,5 +1,5 @@
 # Public HTTPS front (VPS DNAT → Windows :80/:443)
-# - sslip.io → Unitsky explorer + RPC
+# - sslip.io → UST Explorer + RPC
 
 147-45-143-23.sslip.io {
 	encode gzip
@@ -111,6 +111,195 @@
 	}
 }
 
-# Additional virtual hosts can be added in separate .caddy files
-# and imported here:
-# import extra-sites.caddy
+# rpc.byteboost.ru — primary public domain (mirrors sslip.io vhost)
+rpc.byteboost.ru {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options SAMEORIGIN
+		Content-Security-Policy "default-src 'self' https: data:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; connect-src 'self' https: wss:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; frame-ancestors 'self'"
+	}
+
+	@bridgeApi {
+		path /bridge/status /bridge/deposit
+	}
+	handle @bridgeApi {
+		header Access-Control-Allow-Origin *
+		reverse_proxy unitsky-string-rpc-filter:8547 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 10s
+			}
+		}
+	}
+
+	@faucetApi {
+		path /faucet /faucet/*
+		method POST OPTIONS
+	}
+	handle @faucetApi {
+		header Access-Control-Allow-Origin *
+		header Access-Control-Allow-Methods "POST, OPTIONS"
+		header Access-Control-Allow-Headers "Content-Type"
+		reverse_proxy unitsky-string-rpc-filter:8547 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 15s
+			}
+		}
+	}
+	@faucetStatus {
+		path /faucet/status
+		method GET
+	}
+	handle @faucetStatus {
+		reverse_proxy unitsky-string-rpc-filter:8547 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 10s
+			}
+		}
+	}
+
+	handle_path /rpc* {
+		header Access-Control-Allow-Origin *
+		header Access-Control-Allow-Methods "POST, GET, OPTIONS"
+		header Access-Control-Allow-Headers "Content-Type"
+		@rpcOptions method OPTIONS
+		handle @rpcOptions {
+			respond 204
+		}
+		reverse_proxy unitsky-string-rpc-filter:8547 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 20s
+			}
+			lb_try_duration 8s
+		}
+	}
+
+	handle_path /ws* {
+		reverse_proxy unitsky-string-rpc-filter:8548 {
+			transport http {
+				dial_timeout 5s
+			}
+		}
+	}
+
+	handle /icon.svg {
+		root * /srv/static
+		file_server
+	}
+	handle /robots.txt {
+		root * /srv/static
+		file_server
+	}
+
+	@notAcme not path /.well-known/acme-challenge/*
+	handle @notAcme {
+		root * /srv/explorer
+		try_files {path} {path}.html /index.html
+		file_server
+		@htmlReq path /index.html /
+		header @htmlReq Cache-Control "no-store, no-cache, must-revalidate"
+		header @htmlReq Clear-Site-Data `"cache", "storage"`
+	}
+}
+
+# Additional virtual hosts — byteboost.ru sites and git
+import /etc/caddy/byteboost-sites.caddy
+
+git.byteboost.ru {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	reverse_proxy host.docker.internal:3000 {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		transport http {
+			dial_timeout 10s
+			response_header_timeout 30s
+		}
+	}
+}
+
+blockscout.byteboost.ru {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options SAMEORIGIN
+		X-XSS-Protection "1; mode=block"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
+
+	# Chain icon for wallets / MetaMask
+	handle /icon.svg {
+		root * /srv/static
+		file_server
+	}
+
+	# Blockscout backend API (v2)
+	handle /api/v2/* {
+		reverse_proxy host.docker.internal:4000 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 10s
+				response_header_timeout 60s
+			}
+		}
+	}
+
+	# Blockscout backend websocket / internal
+	handle /socket/* {
+		reverse_proxy host.docker.internal:4000 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	handle /api/* {
+		reverse_proxy host.docker.internal:4000 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 10s
+				response_header_timeout 60s
+			}
+		}
+	}
+
+	# Blockscout frontend (everything else)
+	handle {
+		reverse_proxy host.docker.internal:3001 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 10s
+				response_header_timeout 60s
+			}
+		}
+	}
+}
